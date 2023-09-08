@@ -28,4 +28,13 @@ struct Expr {
     Tag tag;
     std::vector<const Expr*> ops;
     size_t hash;
+
+    static void rot_down(const Expr*);
+    static void rot_up(const Expr*);
+
+    struct {
+        const Expr* down   = nullptr;
+        const Expr* up     = nullptr;
+        const Expr* parent = nullptr;
+    } mutable lc; // intrusive Link/Cut Tree
 };

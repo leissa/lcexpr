@@ -40,3 +40,47 @@ std::ostream& Expr::dump(std::ostream& o) const {
 }
 
 std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
+
+/*
+ * Splay Tree
+ */
+
+void rot_down(const Expr* x) {
+    auto y = x->lc.up;
+
+    if (y) {
+        x->lc.up = y->lc.down;
+        if (y->lc.down) y->lc.down->lc.parent = x;
+        y->lc.parent = x->lc.parent;
+    }
+
+    if (!x->lc.parent)
+        ;// root = y;
+    else if (x == x->lc.parent->lc.down)
+        x->lc.parent->lc.down = y;
+    else
+        x->lc.parent->lc.up = y;
+
+    if (y) y->lc.down = x;
+    x->lc.parent = y;
+}
+
+void rot_up(const Expr* x) {
+    auto y = x->lc.down;
+
+    if (y) {
+        x->lc.down = y->lc.up;
+        if (y->lc.up) y->lc.up->lc.parent = x;
+        y->lc.parent = x->lc.parent;
+    }
+
+    if (!x->lc.parent)
+        ;// root = y;
+    else if (x == x->lc.parent->lc.down)
+        x->lc.parent->lc.down = y;
+    else
+        x->lc.parent->lc.up = y;
+
+    if (y) y->lc.up = x;
+    x->lc.parent = y;
+}
