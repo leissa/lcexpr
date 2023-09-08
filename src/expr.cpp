@@ -54,12 +54,13 @@ void rot_down(const Expr* x) {
         y->lc.parent = x->lc.parent;
     }
 
-    if (!x->lc.parent)
-        ;// root = y;
-    else if (x == x->lc.parent->lc.down)
+    if (!x->lc.parent) {
+        // root = y;
+    } else if (x == x->lc.parent->lc.down) {
         x->lc.parent->lc.down = y;
-    else
+    } else {
         x->lc.parent->lc.up = y;
+    }
 
     if (y) y->lc.down = x;
     x->lc.parent = y;
@@ -74,12 +75,13 @@ void rot_up(const Expr* x) {
         y->lc.parent = x->lc.parent;
     }
 
-    if (!x->lc.parent)
-        ;// root = y;
-    else if (x == x->lc.parent->lc.down)
+    if (!x->lc.parent) {
+        // root = y;
+    } else if (x == x->lc.parent->lc.down) {
         x->lc.parent->lc.down = y;
-    else
+    } else {
         x->lc.parent->lc.up = y;
+    }
 
     if (y) y->lc.up = x;
     x->lc.parent = y;
