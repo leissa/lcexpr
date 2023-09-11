@@ -21,8 +21,8 @@ struct World {
 
     size_t next_gid() { return gid++; }
 
-    const Expr* zero() { return put(new Expr(*this, Tag::Zero, {})); }
-    const Expr* one() { return put(new Expr(*this, Tag::One, {})); }
+    const Expr* lit(uint64_t u) { return put(new Expr(*this, Tag::Lit, {}, u)); }
+    const Expr* id(char c) { return put(new Expr(*this, Tag::Id, {}, uint64_t(c))); }
 
     const Expr* minus(const Expr* a) {
         auto ops = std::array<const Expr*, 1>{a};
@@ -30,6 +30,12 @@ struct World {
     }
 
     const Expr* add(const Expr* a, const Expr* b) {
+        if ((a->tag != Tag::Lit && b->tag == Tag::Lit) || a->gid > b->gid) std::swap(a, b);
+
+        if (a->tag == Tag::Lit) {
+            if (a->stuff == 0) return b;
+            if (b->tag == Tag::Lit) return lit(a->stuff + b->stuff);
+        }
         auto ops = std::array<const Expr*, 2>{a, b};
         return put(new Expr(*this, Tag::Add, ops));
     }

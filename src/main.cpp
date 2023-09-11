@@ -5,7 +5,9 @@
 int main() {
     World w;
 
-    auto sel = w.select(w.eq(w.zero(), w.one()), w.add(w.one(), w.one()), w.add(w.one(), w.one()));
+    auto x = w.id('x');
+    auto y = w.id('y');
+    auto sel = w.select(w.eq(w.lit(0), w.lit(1)), w.add(x, y), w.add(w.lit(1), w.lit(1)));
     std::cout << w.gid << std::endl;
     sel->dump();
 }

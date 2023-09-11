@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <ostream>
 #include <span>
 #include <string>
@@ -8,7 +10,7 @@
 struct World;
 
 enum class Tag {
-    Zero, One,    // 0-ary
+    Lit, Id,      // 0-ary
     Minus,        // unary
     Add, Sub, Eq, // binary
     Select,       // ternary
@@ -17,7 +19,7 @@ enum class Tag {
 std::string tag2str(Tag);
 
 struct Expr {
-    Expr(World&, Tag tag, std::span<const Expr*> ops);
+    Expr(World&, Tag tag, std::span<const Expr*> ops, uint64_t stuff = 0);
 
     static bool equal(const Expr*, const Expr*);
     std::ostream& dump(std::ostream&) const;
@@ -27,6 +29,7 @@ struct Expr {
     size_t gid;
     Tag tag;
     std::vector<const Expr*> ops;
+    uint64_t stuff;
     size_t hash;
 
     static void rot_down(const Expr*);
