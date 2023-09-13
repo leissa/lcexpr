@@ -33,17 +33,6 @@ struct Expr {
     uint64_t stuff;
     size_t hash;
 
-    /**
-     *  Left                        Right
-     *      p              p            p            p
-     *      |              |            |            |
-     *      x              c            x            c
-     *     / \     ->     / \          / \    ->    / \
-     *    a   c          x   d        c   a        d   x
-     *       / \        / \          / \              / \
-     *      b   d      a   b        d   b            b   a
-     *
-     */
     template<size_t l>
     void rot() const;
     void rol() const { return rot<0>(); }

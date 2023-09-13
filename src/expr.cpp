@@ -49,16 +49,17 @@ std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
  * Splay Tree
  */
 
-/**
- *  Left                        Right
- *      p              p            p            p
- *      |              |            |            |
- *     this            c           this          c
- *     / \     ->     / \          / \    ->    / \
- *    a   c         this d        c   a        d  this
- *       / \        / \          / \              / \
- *      b   d      a   b        d   b            b   a
- *
+/*
+ *  | Left                  | Right                     |
+ *  ----------------------------------------------------|
+ *  |   p              p    |       p            p      |
+ *  |   |              |    |       |            |      |
+ *  |  this            c    |      this          c      |
+ *  |  / \     ->     / \   |      / \    ->    / \     |
+ *  | a   c         this d  |     c   a        d  this  |
+ *  |    / \        / \     |    / \              / \   |
+ *  |   b   d      a   b    |   d   b            b   a  |
+ *  |
  */
 template<size_t l>
 void Expr::rot() const {
