@@ -44,3 +44,67 @@ std::ostream& Expr::dump(std::ostream& o) const {
 }
 
 std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
+
+/*
+ * Splay Tree
+ */
+
+/**
+ *  Left                        Right
+ *      p              p            p            p
+ *      |              |            |            |
+ *     this            c           this          c
+ *     / \     ->     / \          / \    ->    / \
+ *    a   c         this d        c   a        d  this
+ *       / \        / \          / \              / \
+ *      b   d      a   b        d   b            b   a
+ *
+ */
+template<size_t l>
+void Expr::rot() const {
+    constexpr size_t r = (l + 1) % 2;
+    auto p = lc.p;
+    auto c = lc.child[r];
+    lc.p = c;
+
+    if (c) {
+        auto b = c->lc.child[l];
+        lc.child[r] = b;
+        if (b) b->lc.p = this;
+        c->lc.p = p;
+        c->lc.child[l] = this;
+    }
+
+    if (!p) {
+        // this is new root
+    } else if (p->lc.child[l] == this) {
+        p->lc.child[l] = c;
+    } else {
+        p->lc.child[r] = c;
+    }
+}
+
+void Expr::splay() const {
+    while (auto p = lc.p) {
+        if (auto pp = p->lc.p) {
+            if (p->lc.l() == this && pp->lc.l() == p) {
+                pp->ror();
+                p->ror();
+            } else if (p->lc.r() == this && pp->lc.r() == p) {
+                pp->rol();
+                p->rol();
+            } else if (p->lc.l() == this && pp->lc.r() == p) {
+                p->ror();
+                p->rol();
+            } else {
+                p->rol();
+                p->ror();
+            }
+        } else if (p->lc.l() == this) {
+            p->ror();
+        } else {
+            p->rol();
+        }
+    }
+}
+

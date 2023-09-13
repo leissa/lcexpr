@@ -45,55 +45,10 @@ struct Expr {
      *
      */
     template<size_t l>
-    static void rot(const Expr* x) {
-        constexpr size_t r = (l + 1) % 2;
-        auto p = x->lc.p;
-        auto c = x->lc.child[r];
-        x->lc.p = c;
-
-        if (c) {
-            auto b = c->lc.child[l];
-            x->lc.child[r] = b;
-            if (b) b->lc.p = x;
-            c->lc.p = p;
-            c->lc.child[l] = x;
-        }
-
-        if (!p) {
-            // x is new root
-        } else if (p->lc.child[l] == x) {
-            p->lc.child[l] = c;
-        } else {
-            p->lc.child[r] = c;
-        }
-    }
-
-    void rol(const Expr* x) { return rot<0>(x); }
-    void ror(const Expr* x) { return rot<1>(x); }
-
-    void splay(const Expr* x) {
-        while (auto p = x->lc.p) {
-            if (auto pp = p->lc.p) {
-                if (p->lc.l() == x && pp->lc.l() == p) {
-                    ror(pp);
-                    ror(p);
-                } else if (p->lc.r() == x && pp->lc.r() == p) {
-                    rol(pp);
-                    rol(p);
-                } else if (p->lc.l() == x && pp->lc.r() == p) {
-                    ror(p);
-                    rol(p);
-                } else {
-                    rol(p);
-                    ror(p);
-                }
-            } else if (p->lc.l() == x) {
-                ror(p);
-            } else {
-                rol(p);
-            }
-        }
-    }
+    void rot() const;
+    void rol() const { return rot<0>(); }
+    void ror() const { return rot<1>(); }
+    void splay() const;
 
     struct LC {
         const Expr* p = nullptr;
