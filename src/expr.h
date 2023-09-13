@@ -74,20 +74,20 @@ struct Expr {
     void splay(const Expr* x) {
         while (auto p = x->lc.p) {
             if (auto pp = p->lc.p) {
-                if (p->lc.child[LC::L] == x && pp->lc.child[LC::L] == p) {
+                if (p->lc.l() == x && pp->lc.l() == p) {
                     ror(pp);
                     ror(p);
-                } else if (p->lc.child[LC::R] == x && pp->lc.child[LC::R] == p) {
+                } else if (p->lc.r() == x && pp->lc.r() == p) {
                     rol(pp);
                     rol(p);
-                } else if (p->lc.child[LC::L] == x && pp->lc.child[LC::R] == p) {
+                } else if (p->lc.l() == x && pp->lc.r() == p) {
                     ror(p);
                     rol(p);
                 } else {
                     rol(p);
                     ror(p);
                 }
-            } else if (p->lc.child[LC::L] == x) {
+            } else if (p->lc.l() == x) {
                 ror(p);
             } else {
                 rol(p);
@@ -96,8 +96,9 @@ struct Expr {
     }
 
     struct LC {
-        enum { L, R };
         const Expr* p = nullptr;
         std::array<const Expr*, 2> child = {nullptr, nullptr};
+        const Expr* l() const { return child[0]; }
+        const Expr* r() const { return child[1]; }
     } mutable lc; // intrusive Link/Cut Tree
 };
