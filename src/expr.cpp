@@ -109,3 +109,14 @@ void Expr::splay() const {
     }
 }
 
+/*
+ * Link/Cut Tree
+ */
+
+void Expr::expose() {
+    for (const Expr* expr = this, *prev = nullptr; expr; expr = expr->lc.p, prev = expr) {
+        expr->splay();
+        expr->lc.child[0] = prev;
+    }
+    splay();
+}

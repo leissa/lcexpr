@@ -33,11 +33,34 @@ struct Expr {
     uint64_t stuff;
     size_t hash;
 
+    /// @name Splay Tree
+    ///@{
     template<size_t l>
     void rot() const;
     void rol() const { return rot<0>(); }
     void ror() const { return rot<1>(); }
     void splay() const;
+    ///@}
+
+    ///@{ name Link/Cut Tree
+    ///@{
+
+    /// Make `this` the root and the leftmost node in its splay tree.
+    void expose();
+
+    // Make `this` a child of `parent`.
+    void link(const Expr* parent) {
+        expose();
+        lc.p = parent;
+    }
+
+    // Separate `this` from its parent:
+    void cut() {
+        expose();
+        lc.child[1]->lc.p = nullptr;
+        lc.child[1] = nullptr;
+    }
+    ///@}
 
     struct LC {
         const Expr* p = nullptr;
