@@ -42,16 +42,18 @@ struct Expr {
     void splay() const;
     ///@}
 
-    ///@{ name Link/Cut Tree
+    /// @name Link/Cut Tree
     ///@{
 
     /// Make `this` the root and the leftmost node in its splay tree.
-    void expose();
+    void expose() const;
 
     // Make `this` a child of `parent`.
-    void link(const Expr* parent) {
+    void link(const Expr* parent) const {
         expose();
+        parent->expose();
         lc.p = parent;
+        parent->lc.child[0] = this;
     }
 
     // Separate `this` from its parent:

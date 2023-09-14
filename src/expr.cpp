@@ -25,7 +25,10 @@ Expr::Expr(World& world, Tag tag, std::span<const Expr*> ops, uint64_t stuff)
     , stuff(stuff)
     , hash(size_t(tag)) {
     hash ^= stuff << 1;
-    for (auto op : ops) hash ^= op->gid << 1;
+    for (auto op : ops) {
+        hash ^= op->gid << 1;
+        op->link(this);
+    }
 }
 
 bool Expr::equal(const Expr* e1, const Expr* e2) {
@@ -81,6 +84,7 @@ void Expr::rot() const {
     } else if (p->lc.child[l] == this) {
         p->lc.child[l] = c;
     } else {
+        assert(p->lc.child[r] == this);
         p->lc.child[r] = c;
     }
 }
@@ -88,22 +92,24 @@ void Expr::rot() const {
 void Expr::splay() const {
     while (auto p = lc.p) {
         if (auto pp = p->lc.p) {
-            if (p->lc.l() == this && pp->lc.l() == p) {
+            if (p->lc.l() == this && pp->lc.l() == p) {         // zig-zig
                 pp->ror();
                 p->ror();
-            } else if (p->lc.r() == this && pp->lc.r() == p) {
+            } else if (p->lc.r() == this && pp->lc.r() == p) {  // zig-zig
                 pp->rol();
                 p->rol();
-            } else if (p->lc.l() == this && pp->lc.r() == p) {
+            } else if (p->lc.l() == this && pp->lc.r() == p) {  // zig-zag
                 p->ror();
                 p->rol();
-            } else {
+            } else {                                            // zig-zag
+                assert(p->lc.r() == this && pp->lc.l() == p);
                 p->rol();
                 p->ror();
             }
-        } else if (p->lc.l() == this) {
+        } else if (p->lc.l() == this) {                         // zig
             p->ror();
-        } else {
+        } else {                                                // zig
+            assert(p->lc.r() == this);
             p->rol();
         }
     }
@@ -113,7 +119,7 @@ void Expr::splay() const {
  * Link/Cut Tree
  */
 
-void Expr::expose() {
+void Expr::expose() const {
     for (const Expr* expr = this, *prev = nullptr; expr; expr = expr->lc.p, prev = expr) {
         expr->splay();
         expr->lc.child[0] = prev;
