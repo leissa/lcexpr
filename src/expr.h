@@ -35,6 +35,8 @@ struct Expr {
 
     /// @name Splay Tree
     ///@{
+    const Expr* parent() const { return lc.p && (lc.p->lc.l() == this || lc.p->lc.r() == this) ? lc.p : nullptr; }
+    const Expr* path_parent() const { return lc.p && (lc.p->lc.l() != this && lc.p->lc.r() != this) ? lc.p : nullptr; }
     template<size_t l>
     void rot() const;
     void rol() const { return rot<0>(); }
@@ -44,30 +46,16 @@ struct Expr {
 
     /// @name Link/Cut Tree
     ///@{
-
-    /// Make `this` the root and the leftmost node in its splay tree.
-    void expose() const;
-
-    // Make `this` a child of `parent`.
-    void link(const Expr* parent) const {
-        expose();
-        parent->expose();
-        lc.p = parent;
-        parent->lc.child[0] = this;
-    }
-
-    // Separate `this` from its parent:
-    void cut() {
-        expose();
-        lc.child[1]->lc.p = nullptr;
-        lc.child[1] = nullptr;
-    }
+    void expose() const;            ///< Make `this` the root and the leftmost node in its splay tree.
+    void link(const Expr* p) const; ///< Make `this` a child of @p p%arent.
+    void cut() const;               ///< Cut `this` from its parent.
     ///@}
 
     struct LC {
-        const Expr* p = nullptr;
+        const Expr* l() const { return child[0]; } // deeper/down
+        const Expr* r() const { return child[1]; } // shallower/up
+
+        const Expr* p = nullptr; // parent or path-parent
         std::array<const Expr*, 2> child = {nullptr, nullptr};
-        const Expr* l() const { return child[0]; }
-        const Expr* r() const { return child[1]; }
     } mutable lc; // intrusive Link/Cut Tree
 };

@@ -67,7 +67,7 @@ std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
 template<size_t l>
 void Expr::rot() const {
     constexpr size_t r = (l + 1) % 2;
-    auto p = lc.p;
+    auto p = parent();
     auto c = lc.child[r];
     lc.p = c;
 
@@ -90,8 +90,8 @@ void Expr::rot() const {
 }
 
 void Expr::splay() const {
-    while (auto p = lc.p) {
-        if (auto pp = p->lc.p) {
+    while (auto p = parent()) {
+        if (auto pp = p->parent()) {
             if (p->lc.l() == this && pp->lc.l() == p) {         // zig-zig
                 pp->ror();
                 p->ror();
@@ -119,9 +119,27 @@ void Expr::splay() const {
  * Link/Cut Tree
  */
 
+void Expr::link(const Expr* p) const {
+    expose();
+    p->expose();
+    lc.p = p;
+    auto& l = p->lc.child[0];
+    assert(!l);
+    l = this;
+}
+
+void Expr::cut() const {
+    expose();
+    if (auto& r = lc.child[1]) {
+        r->lc.p = nullptr;
+        r       = nullptr;
+    }
+}
+
 void Expr::expose() const {
     for (const Expr* expr = this, *prev = nullptr; expr; expr = expr->lc.p, prev = expr) {
         expr->splay();
+        assert(!prev || prev->lc.p == expr);
         expr->lc.child[0] = prev;
     }
     splay();
