@@ -48,6 +48,25 @@ std::ostream& Expr::dump(std::ostream& o) const {
 
 std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
 
+std::ostream& Expr::dot() const {
+    std::cout << "digraph A {" << std::endl;;
+    dot(std::cout) << std::endl;
+    std::cout << "}" << std::endl;;
+    return std::cout;
+}
+
+std::ostream& Expr::dot(std::ostream& o) const {
+    for (auto op : ops) {
+        o << '\t' << gid << " -> " << op->gid << ';' << std::endl;
+    }
+    if (auto p = parent()) o << '\t' << gid << " -> " << p->gid << "[style=dashed];" << std::endl;
+    if (auto p = path_parent()) o << '\t' << gid << " -> " << p->gid << "[style=dashed,color=gray];" << std::endl;
+    if (auto l = lc.l()) o << '\t' << gid << " -> " << l->gid << "[color=green];" << std::endl;
+    if (auto r = lc.r()) o << '\t' << gid << " -> " << r->gid << "[color=red];" << std::endl;
+    for (auto op : ops) op->dot(o);
+    return o;
+}
+
 /*
  * Splay Tree
  */

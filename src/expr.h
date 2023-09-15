@@ -25,6 +25,8 @@ struct Expr {
     static bool equal(const Expr*, const Expr*);
     std::ostream& dump(std::ostream&) const;
     std::ostream& dump() const;
+    std::ostream& dot(std::ostream&) const;
+    std::ostream& dot() const;
 
     World& world;
     size_t gid;
