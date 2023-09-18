@@ -1,6 +1,7 @@
 #include "expr.h"
 
 #include <iostream>
+#include <queue>
 
 #include "world.h"
 
@@ -47,24 +48,36 @@ std::ostream& Expr::dump(std::ostream& o) const {
 }
 
 std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
-
-std::ostream& Expr::dot() const {
-    std::cout << "digraph A {" << std::endl;;
-    dot(std::cout) << std::endl;
-    std::cout << "}" << std::endl;;
-    return std::cout;
-}
+std::ostream& Expr::dot() const { return dot(std::cout); }
 
 std::ostream& Expr::dot(std::ostream& o) const {
-    for (auto op : ops) {
-        o << '\t' << gid << " -> " << op->gid << ';' << std::endl;
+    ExprSet done;
+    std::queue<const Expr*> q;
+
+    auto enqueue = [&q, &done](const Expr* expr) {
+        if (done.emplace(expr).second) q.emplace(expr);
+    };
+
+    enqueue(this);
+
+    o << "digraph A {" << std::endl;;
+
+    while (!q.empty()) {
+        auto expr = q.front();
+        q.pop();
+
+        for (auto op : expr->ops) {
+            o << '\t' << expr->gid << " -> " << op->gid << ';' << std::endl;
+        }
+        if (auto p = expr->parent()) o << '\t' << expr->gid << " -> " << p->gid << "[style=dashed];" << std::endl;
+        if (auto p = expr->path_parent()) o << '\t' << expr->gid << " -> " << p->gid << "[style=dashed,color=gray];" << std::endl;
+        if (auto l = expr->lc.l()) o << '\t' << expr->gid << " -> " << l->gid << "[color=green];" << std::endl;
+        if (auto r = expr->lc.r()) o << '\t' << expr->gid << " -> " << r->gid << "[color=red];" << std::endl;
+
+        for (auto op : expr->ops) enqueue(op);
     }
-    if (auto p = parent()) o << '\t' << gid << " -> " << p->gid << "[style=dashed];" << std::endl;
-    if (auto p = path_parent()) o << '\t' << gid << " -> " << p->gid << "[style=dashed,color=gray];" << std::endl;
-    if (auto l = lc.l()) o << '\t' << gid << " -> " << l->gid << "[color=green];" << std::endl;
-    if (auto r = lc.r()) o << '\t' << gid << " -> " << r->gid << "[color=red];" << std::endl;
-    for (auto op : ops) op->dot(o);
-    return o;
+
+    return o << "}" << std::endl;;
 }
 
 /*

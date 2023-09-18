@@ -6,6 +6,8 @@
 #include <ostream>
 #include <span>
 #include <string>
+#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 struct World;
@@ -18,6 +20,21 @@ enum class Tag {
 };
 
 std::string tag2str(Tag);
+
+template<class T>
+struct GIDHash {
+    size_t operator()(T p) const { return p->gid; }; // TODO bad hash function
+};
+
+template<class T>
+struct GIDEq {
+    bool operator()(T a, T b) const { return a->gid == b->gid; }
+};
+
+template<class T>
+struct GIDLt {
+    bool operator()(T a, T b) const { return a->gid < b->gid; }
+};
 
 struct Expr {
     Expr(World&, Tag tag, std::span<const Expr*> ops, uint64_t stuff = 0);
@@ -61,3 +78,7 @@ struct Expr {
         std::array<const Expr*, 2> child = {nullptr, nullptr};
     } mutable lc; // intrusive Link/Cut Tree
 };
+
+using ExprSet = std::unordered_set<const Expr*, GIDHash<const Expr*>, GIDEq<const Expr*>>;
+template<class T>
+using ExprMap = std::unordered_map<const Expr*, T, GIDHash<const Expr*>, GIDEq<const Expr*>>;
