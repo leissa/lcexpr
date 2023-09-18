@@ -67,12 +67,12 @@ std::ostream& Expr::dot(std::ostream& o) const {
         q.pop();
 
         for (auto op : expr->ops) {
-            o << '\t' << expr->gid << " -> " << op->gid << ';' << std::endl;
+            o << '\t' << expr->str() << " -> " << op->str() << ';' << std::endl;
         }
-        if (auto p = expr->parent()) o << '\t' << expr->gid << " -> " << p->gid << "[style=dashed];" << std::endl;
-        if (auto p = expr->path_parent()) o << '\t' << expr->gid << " -> " << p->gid << "[style=dashed,color=gray];" << std::endl;
-        if (auto l = expr->lc.l()) o << '\t' << expr->gid << " -> " << l->gid << "[color=green];" << std::endl;
-        if (auto r = expr->lc.r()) o << '\t' << expr->gid << " -> " << r->gid << "[color=red];" << std::endl;
+        if (auto p = expr->parent()) o << '\t' << expr->str() << " -> " << p->str() << "[style=dashed];" << std::endl;
+        if (auto p = expr->path_parent()) o << '\t' << expr->str() << " -> " << p->str() << "[style=dashed,color=gray];" << std::endl;
+        if (auto l = expr->lc.l()) o << '\t' << expr->str() << " -> " << l->str() << "[color=green];" << std::endl;
+        if (auto r = expr->lc.r()) o << '\t' << expr->str() << " -> " << r->str() << "[color=red];" << std::endl;
 
         for (auto op : expr->ops) enqueue(op);
     }
@@ -155,9 +155,9 @@ void Expr::link(const Expr* p) const {
     expose();
     p->expose();
     lc.p = p;
-    auto& l = p->lc.child[0];
-    assert(!l);
-    l = this;
+    auto& r = p->lc.child[1];
+    assert(!r);
+    r = this;
 }
 
 void Expr::cut() const {

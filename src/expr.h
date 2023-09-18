@@ -44,6 +44,12 @@ struct Expr {
     std::ostream& dump() const;
     std::ostream& dot(std::ostream&) const;
     std::ostream& dot() const;
+    std::string name() const {
+        if (tag == Tag::Lit) return std::to_string(stuff);
+        if (tag == Tag::Id) return std::string(1, (char)stuff);
+        return tag2str(tag);
+    }
+    std::string str() const { return std::string("\"") + name() + std::string("\""); }
 
     World& world;
     size_t gid;
