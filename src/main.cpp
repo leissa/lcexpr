@@ -2,19 +2,34 @@
 
 #include "world.h"
 
+void link(const Expr* c, const Expr* p) {
+    c->lc.p = p;
+    p->lc.l = c;
+}
+
+void rink(const Expr* c, const Expr* p) {
+    c->lc.p = p;
+    p->lc.r = c;
+}
+
 int main() {
     World w;
 
-#if 0
-    auto x = w.id('x');
-    auto y = w.id('y');
-    auto sel = w.select(w.eq(w.lit(0), w.lit(1)), w.add(x, y), w.add(w.lit(1), w.lit(1)));
-    //w.lit(1)->expose();
+    auto a = w.id('a');
+    auto b = w.id('b');
+    auto eq = w.eq(w.lit(0), w.lit(1));
+    auto sel = w.select(eq, w.add(a, b), w.add(w.lit(2), w.lit(3)));
     sel->dot();
-    auto add = w.add(x, y);
-#endif
-    auto x = w.id('x');
-    auto y = w.id('y');
-    auto add = w.add(x, y);
-    add->dot();
+    w.lit(1)->expose();
+    sel->dot();
+    eq->expose();
+    sel->dot();
+    w.lit(1)->expose();
+    sel->dot();
+    w.lit(5)->expose();
+    sel->dot();
+    a->expose();
+    sel->dot();
+    b->expose();
+    sel->dot();
 }

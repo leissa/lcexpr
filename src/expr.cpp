@@ -1,9 +1,12 @@
 #include "expr.h"
 
 #include <iostream>
+#include <fstream>
 #include <queue>
 
 #include "world.h"
+
+using namespace std::string_literals;
 
 std::string tag2str(Tag tag) {
     switch (tag) {
@@ -12,6 +15,7 @@ std::string tag2str(Tag tag) {
         case Tag::Minus:  return "-";
         case Tag::Add:    return "+";
         case Tag::Sub:    return "-";
+        case Tag::Mul:    return "*";
         case Tag::Eq:     return "==";
         case Tag::Select: return "?:";
         default:          return "<unknonw>";
@@ -48,7 +52,16 @@ std::ostream& Expr::dump(std::ostream& o) const {
 }
 
 std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
-std::ostream& Expr::dot() const { return dot(std::cout); }
+
+void Expr::dot() const {
+    static int i = 0;
+    dot("out" + std::to_string(i++) + ".dot");
+}
+
+void Expr::dot(std::string name) const {
+    std::ofstream ofs(name);
+    dot(ofs);
+}
 
 std::ostream& Expr::dot(std::ostream& o) const {
     ExprSet done;
@@ -67,12 +80,27 @@ std::ostream& Expr::dot(std::ostream& o) const {
         q.pop();
 
         for (auto op : expr->ops) {
-            o << '\t' << expr->str() << " -> " << op->str() << ';' << std::endl;
+            //if (expr->lc.l == op)
+                //o << '\t' << expr->str() << " -> " << op->str() << "[color=green];" << std::endl;
+            //else if (op->lc.r == expr)
+                //o << '\t' << expr->str() << " -> " << op->str() << "[color=red];" << std::endl;
+            //else
+                o << '\t' << expr->str() << " -> " << op->str() << "[color=black];" << std::endl;
+            enqueue(op);
         }
-        if (auto p = expr->parent()) o << '\t' << expr->str() << " -> " << p->str() << "[style=dashed];" << std::endl;
-        if (auto p = expr->path_parent()) o << '\t' << expr->str() << " -> " << p->str() << "[style=dashed,color=gray];" << std::endl;
-        if (auto l = expr->lc.l()) o << '\t' << expr->str() << " -> " << l->str() << "[color=green];" << std::endl;
-        if (auto r = expr->lc.r()) o << '\t' << expr->str() << " -> " << r->str() << "[color=red];" << std::endl;
+    }
+
+    done.clear();
+    enqueue(this);
+
+    while (!q.empty()) {
+        auto expr = q.front();
+        q.pop();
+
+        if (auto p = expr->parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed];" << std::endl;
+        if (auto p = expr->path_parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed,color=gray];" << std::endl;
+        if (auto l = expr->lc.l) o << '\t' << expr->str2() << " -> " << l->str2() << "[color=green];" << std::endl;
+        if (auto r = expr->lc.r) o << '\t' << expr->str2() << " -> " << r->str2() << "[color=red];" << std::endl;
 
         for (auto op : expr->ops) enqueue(op);
     }
@@ -99,7 +127,8 @@ std::ostream& Expr::dot(std::ostream& o) const {
 template<size_t l>
 void Expr::rot() const {
     constexpr size_t r = (l + 1) % 2;
-    auto p = parent();
+    auto p = lc.p;
+    auto ppp = parent();
     auto c = lc.child[r];
     lc.p = c;
 
@@ -111,7 +140,7 @@ void Expr::rot() const {
         c->lc.child[l] = this;
     }
 
-    if (!p) {
+    if (!ppp) {
         // this is new root
     } else if (p->lc.child[l] == this) {
         p->lc.child[l] = c;
@@ -124,24 +153,24 @@ void Expr::rot() const {
 void Expr::splay() const {
     while (auto p = parent()) {
         if (auto pp = p->parent()) {
-            if (p->lc.l() == this && pp->lc.l() == p) {         // zig-zig
+            if (p->lc.l == this && pp->lc.l == p) {         // zig-zig
                 pp->ror();
                 p->ror();
-            } else if (p->lc.r() == this && pp->lc.r() == p) {  // zig-zig
+            } else if (p->lc.r == this && pp->lc.r == p) {  // zag-zag
                 pp->rol();
                 p->rol();
-            } else if (p->lc.l() == this && pp->lc.r() == p) {  // zig-zag
+            } else if (p->lc.l == this && pp->lc.r == p) {  // zig-zag
                 p->ror();
+                pp->rol();
+            } else {                                        // zag-zig
+                assert(p->lc.r == this && pp->lc.l == p);
                 p->rol();
-            } else {                                            // zig-zag
-                assert(p->lc.r() == this && pp->lc.l() == p);
-                p->rol();
-                p->ror();
+                pp->ror();
             }
-        } else if (p->lc.l() == this) {                         // zig
+        } else if (p->lc.l == this) {                       // zig
             p->ror();
-        } else {                                                // zig
-            assert(p->lc.r() == this);
+        } else {                                            // zag
+            assert(p->lc.r == this);
             p->rol();
         }
     }
@@ -151,28 +180,27 @@ void Expr::splay() const {
  * Link/Cut Tree
  */
 
-void Expr::link(const Expr* p) const {
+void Expr::link(const Expr* up) const {
     expose();
-    p->expose();
-    lc.p = p;
-    auto& r = p->lc.child[1];
-    assert(!r);
-    r = this;
+    up->expose();
+    up->lc.p = this;
+    assert(!lc.r);
+    lc.r = up;
 }
 
 void Expr::cut() const {
     expose();
-    if (auto& r = lc.child[1]) {
+    if (auto& r = lc.r) {
         r->lc.p = nullptr;
         r       = nullptr;
     }
 }
 
 void Expr::expose() const {
-    for (const Expr* expr = this, *prev = nullptr; expr; expr = expr->lc.p, prev = expr) {
+    for (const Expr* expr = this, *prev = nullptr; expr; prev = expr, expr = expr->lc.p) {
         expr->splay();
         assert(!prev || prev->lc.p == expr);
-        expr->lc.child[0] = prev;
+        expr->lc.l = prev;
     }
     splay();
 }

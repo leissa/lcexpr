@@ -13,10 +13,10 @@
 struct World;
 
 enum class Tag {
-    Lit, Id,      // 0-ary
-    Minus,        // unary
-    Add, Sub, Eq, // binary
-    Select,       // ternary
+    Lit, Id,            // 0-ary
+    Minus,              // unary
+    Add, Sub, Mul, Eq,  // binary
+    Select,             // ternary
 };
 
 std::string tag2str(Tag);
@@ -42,14 +42,21 @@ struct Expr {
     static bool equal(const Expr*, const Expr*);
     std::ostream& dump(std::ostream&) const;
     std::ostream& dump() const;
+
+    /// @name GraphViz' Dot output
+    ///@{
+    void dot() const;
+    void dot(std::string) const;
     std::ostream& dot(std::ostream&) const;
-    std::ostream& dot() const;
+    ///@}
+
     std::string name() const {
         if (tag == Tag::Lit) return std::to_string(stuff);
         if (tag == Tag::Id) return std::string(1, (char)stuff);
         return tag2str(tag);
     }
-    std::string str() const { return std::string("\"") + name() + std::string("\""); }
+    std::string str() const { return std::string("\"") + std::to_string(gid) + ": " + name() + std::string("\""); }
+    std::string str2() const { return std::string("\"_") + std::to_string(gid) + ": " + name() + std::string("\""); }
 
     World& world;
     size_t gid;
@@ -60,8 +67,8 @@ struct Expr {
 
     /// @name Splay Tree
     ///@{
-    const Expr* parent() const { return lc.p && (lc.p->lc.l() == this || lc.p->lc.r() == this) ? lc.p : nullptr; }
-    const Expr* path_parent() const { return lc.p && (lc.p->lc.l() != this && lc.p->lc.r() != this) ? lc.p : nullptr; }
+    const Expr* parent() const { return lc.p && (lc.p->lc.l == this || lc.p->lc.r == this) ? lc.p : nullptr; }
+    const Expr* path_parent() const { return lc.p && (lc.p->lc.l != this && lc.p->lc.r != this) ? lc.p : nullptr; }
     template<size_t l>
     void rot() const;
     void rol() const { return rot<0>(); }
@@ -77,11 +84,18 @@ struct Expr {
     ///@}
 
     struct LC {
-        const Expr* l() const { return child[0]; } // deeper/down
-        const Expr* r() const { return child[1]; } // shallower/up
+        LC() {
+            l = r = nullptr;
+        }
 
         const Expr* p = nullptr; // parent or path-parent
-        std::array<const Expr*, 2> child = {nullptr, nullptr};
+        union {
+            struct {
+                const Expr* l; // deeper/down
+                const Expr* r; // shallower/up
+            };
+            std::array<const Expr*, 2> child;
+        };
     } mutable lc; // intrusive Link/Cut Tree
 };
 

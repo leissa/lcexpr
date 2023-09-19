@@ -43,6 +43,10 @@ struct World {
         auto ops = std::array<const Expr*, 2>{a, b};
         return put(new Expr(*this, Tag::Sub, ops));
     }
+    const Expr* mul(const Expr* a, const Expr* b) {
+        auto ops = std::array<const Expr*, 2>{a, b};
+        return put(new Expr(*this, Tag::Mul, ops));
+    }
     const Expr* eq(const Expr* a, const Expr* b) {
         auto ops = std::array<const Expr*, 2>{a, b};
         return put(new Expr(*this, Tag::Eq, ops));
