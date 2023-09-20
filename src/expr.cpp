@@ -109,126 +109,13 @@ std::ostream& Expr::dot(std::ostream& o) const {
         auto expr = q.front();
         q.pop();
 
-        if (auto p = expr->parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed];" << std::endl;
+        if (auto p = expr->splay_parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed];" << std::endl;
         if (auto p = expr->path_parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed,color=gray];" << std::endl;
-        if (auto l = expr->lc.left) o << '\t' << expr->str2() << " -> " << l->str2() << "[color=green];" << std::endl;
-        if (auto r = expr->lc.right) o << '\t' << expr->str2() << " -> " << r->str2() << "[color=red];" << std::endl;
+        if (auto l = expr->left()) o << '\t' << expr->str2() << " -> " << l->str2() << "[color=green];" << std::endl;
+        if (auto r = expr->right()) o << '\t' << expr->str2() << " -> " << r->str2() << "[color=red];" << std::endl;
 
         for (auto op : expr->ops) enqueue(op);
     }
 
     return o << "}" << std::endl;;
-}
-
-/*
- * Splay Tree
- */
-
-/*
- *  | Left                  | Right                     |
- *  ----------------------------------------------------|
- *  |   p              p    |       p            p      |
- *  |   |              |    |       |            |      |
- *  |  this            c    |      this          c      |
- *  |  / \     ->     / \   |      / \    ->    / \     |
- *  | a   c         this d  |     c   a        d  this  |
- *  |    / \        / \     |    / \              / \   |
- *  |   b   d      a   b    |   d   b            b   a  |
- *  |
- */
-template<size_t l>
-void Expr::rot() const {
-    constexpr size_t r = (l + 1) % 2;
-    auto p = lc.parent;
-    auto ppp = parent();
-    auto c = lc.child(r);
-    lc.parent = c;
-
-    if (c) {
-        auto b = c->lc.child(l);
-        lc.child(r) = b;
-        if (b) b->lc.parent = this;
-        c->lc.parent = p;
-        c->lc.child(l) = this;
-    }
-
-    if (!ppp) {
-        // this is new root
-    } else if (p->lc.child(l) == this) {
-        p->lc.child(l) = c;
-    } else {
-        assert(p->lc.child(r) == this);
-        p->lc.child(r) = c;
-    }
-}
-
-void Expr::splay() const {
-    while (auto p = parent()) {
-        if (auto pp = p->parent()) {
-            if (p->lc.left == this && pp->lc.left == p) {           // zig-zig
-                pp->ror();
-                p->ror();
-            } else if (p->lc.right == this && pp->lc.right == p) {  // zag-zag
-                pp->rol();
-                p->rol();
-            } else if (p->lc.left == this && pp->lc.right == p) {   // zig-zag
-                p->ror();
-                pp->rol();
-            } else {                                                // zag-zig
-                assert(p->lc.right == this && pp->lc.left == p);
-                p->rol();
-                pp->ror();
-            }
-        } else if (p->lc.left == this) {                            // zig
-            p->ror();
-        } else {                                                    // zag
-            assert(p->lc.right == this);
-            p->rol();
-        }
-    }
-}
-
-/*
- * Link/Cut Tree
- */
-
-void Expr::link(const Expr* up) const {
-    expose();
-    up->expose();
-    up->lc.parent = this;
-    assert(!lc.right);
-    lc.right = up;
-}
-
-void Expr::cut() const {
-    expose();
-    if (auto& r = lc.right) {
-        r->lc.parent = nullptr;
-        r            = nullptr;
-    }
-}
-
-void Expr::expose() const {
-    for (const Expr* expr = this, *prev = nullptr; expr; prev = expr, expr = expr->lc.parent) {
-        expr->splay();
-        assert(!prev || prev->lc.parent == expr);
-        expr->lc.left = prev;
-    }
-    splay();
-}
-
-const Expr* Expr::root() const {
-    expose();
-    const Expr* expr = this;
-    while (auto r = expr->lc.right) expr = r;
-    expr->splay();
-    return expr;
-}
-
-const Expr* Expr::lca(const Expr* a, const Expr* b) {
-    if (a == b) return a;
-    if (a->root() != b->root()) return nullptr;
-    a->expose();
-    b->expose();
-    return b;
 }

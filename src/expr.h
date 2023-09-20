@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "link_cut_tree.h"
+
 struct World;
 
 enum class Tag {
@@ -38,7 +40,7 @@ struct GIDLt {
     bool operator()(T a, T b) const { return a->gid < b->gid; }
 };
 
-struct Expr {
+struct Expr : public LinkCutTree<const Expr> {
     Expr(World&, Tag tag, std::span<const Expr*> ops, uint64_t stuff = 0);
     Expr(World&);
 
@@ -68,33 +70,6 @@ struct Expr {
     std::vector<const Expr*> ops;
     uint64_t stuff;
     size_t hash;
-
-    /// @name Splay Tree
-    ///@{
-    const Expr* parent() const { return lc.parent && (lc.parent->lc.left == this || lc.parent->lc.right == this) ? lc.parent : nullptr; }
-    const Expr* path_parent() const { return lc.parent && (lc.parent->lc.left != this && lc.parent->lc.right != this) ? lc.parent : nullptr; }
-    const Expr* root() const;
-    static const Expr* lca(const Expr* a, const Expr* b);
-    template<size_t l>
-    void rot() const;
-    void rol() const { return rot<0>(); }
-    void ror() const { return rot<1>(); }
-    void splay() const;
-    ///@}
-
-    /// @name Link/Cut Tree
-    ///@{
-    void expose() const;            ///< Make `this` the root and the leftmost node in its splay tree.
-    void link(const Expr* p) const; ///< Make `this` a child of @p p%arent.
-    void cut() const;               ///< Cut `this` from its parent.
-    ///@}
-
-    struct {
-        const Expr*& child(size_t i) { return i == 0 ? left : right; }
-        const Expr* parent = nullptr; ///< parent or path-parent
-        const Expr* left   = nullptr; ///< deeper/down
-        const Expr* right  = nullptr; ///< shallower/up
-    } mutable lc; // intrusive Link/Cut Tree
 };
 
 using ExprSet = std::unordered_set<const Expr*, GIDHash<const Expr*>, GIDEq<const Expr*>>;

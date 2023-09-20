@@ -6,10 +6,10 @@
 struct Test : public LinkCutTree<Test> {
 };
 
-//struct ConstTest : LinkCutTree<const Test> {
-//};
+struct ConstTest : LinkCutTree<const ConstTest> {
+};
 
-void foo(const Test* test) {
+void foo(const ConstTest* test) {
     test->root();
 }
 
@@ -19,7 +19,7 @@ int main() {
     a.root();
     a.cut();
 
-    Test x, y;
+    ConstTest x, y;
     x.link(&y);
     foo(&y);
     y.cut();
