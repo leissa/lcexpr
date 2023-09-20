@@ -57,6 +57,16 @@ struct World {
         return put(new Expr(*this, Tag::Select, ops));
     }
 
+    const Expr* jmp(const Expr* bb, const Expr* arg) {
+        auto ops = std::array<const Expr*, 2>{bb, arg};
+        return put(new Expr(*this, Tag::Jmp, ops));
+    }
+
+    const Expr* br(const Expr* cond, const Expr* t, const Expr* f) {
+        auto ops = std::array<const Expr*, 3>{cond, t, f};
+        return put(new Expr(*this, Tag::Br, ops));
+    }
+
     const Expr* put(const Expr* expr) {
         auto [i, ins] = set.emplace(expr);
         if (ins) return expr;

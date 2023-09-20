@@ -25,6 +25,7 @@ std::string tag2str(Tag tag) {
 Expr::Expr(World& world, Tag tag, std::span<const Expr*> ops, uint64_t stuff)
     : world(world)
     , gid(world.next_gid())
+    , mut(false)
     , tag(tag)
     , ops(ops.begin(), ops.end())
     , stuff(stuff)
@@ -36,7 +37,18 @@ Expr::Expr(World& world, Tag tag, std::span<const Expr*> ops, uint64_t stuff)
     }
 }
 
+Expr::Expr(World& world)
+    : world(world)
+    , gid(world.next_gid())
+    , mut(true)
+    , tag(Tag::BB)
+    , ops(1, nullptr)
+    , stuff(0)
+    , hash(gid) {}
+
 bool Expr::equal(const Expr* e1, const Expr* e2) {
+    if (e1->mut || e2->mut) return e1 == e2;
+
     bool res = e1->tag == e2->tag && e1->stuff == e2->stuff && e1->ops.size() == e2->ops.size();
     size_t n = e1->ops.size();
     for (size_t i = 0; i != n && res; ++i) res &= e1->ops[i]->gid == e2->ops[i]->gid;
@@ -80,9 +92,9 @@ std::ostream& Expr::dot(std::ostream& o) const {
         q.pop();
 
         for (auto op : expr->ops) {
-            //if (expr->lc.l == op)
+            //if (expr->lc.left == op)
                 //o << '\t' << expr->str() << " -> " << op->str() << "[color=green];" << std::endl;
-            //else if (op->lc.r == expr)
+            //else if (op->lc.rightight == expr)
                 //o << '\t' << expr->str() << " -> " << op->str() << "[color=red];" << std::endl;
             //else
                 o << '\t' << expr->str() << " -> " << op->str() << "[color=black];" << std::endl;
@@ -99,8 +111,8 @@ std::ostream& Expr::dot(std::ostream& o) const {
 
         if (auto p = expr->parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed];" << std::endl;
         if (auto p = expr->path_parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed,color=gray];" << std::endl;
-        if (auto l = expr->lc.l) o << '\t' << expr->str2() << " -> " << l->str2() << "[color=green];" << std::endl;
-        if (auto r = expr->lc.r) o << '\t' << expr->str2() << " -> " << r->str2() << "[color=red];" << std::endl;
+        if (auto l = expr->lc.left) o << '\t' << expr->str2() << " -> " << l->str2() << "[color=green];" << std::endl;
+        if (auto r = expr->lc.right) o << '\t' << expr->str2() << " -> " << r->str2() << "[color=red];" << std::endl;
 
         for (auto op : expr->ops) enqueue(op);
     }
@@ -127,50 +139,50 @@ std::ostream& Expr::dot(std::ostream& o) const {
 template<size_t l>
 void Expr::rot() const {
     constexpr size_t r = (l + 1) % 2;
-    auto p = lc.p;
+    auto p = lc.parent;
     auto ppp = parent();
-    auto c = lc.child[r];
-    lc.p = c;
+    auto c = lc.child(r);
+    lc.parent = c;
 
     if (c) {
-        auto b = c->lc.child[l];
-        lc.child[r] = b;
-        if (b) b->lc.p = this;
-        c->lc.p = p;
-        c->lc.child[l] = this;
+        auto b = c->lc.child(l);
+        lc.child(r) = b;
+        if (b) b->lc.parent = this;
+        c->lc.parent = p;
+        c->lc.child(l) = this;
     }
 
     if (!ppp) {
         // this is new root
-    } else if (p->lc.child[l] == this) {
-        p->lc.child[l] = c;
+    } else if (p->lc.child(l) == this) {
+        p->lc.child(l) = c;
     } else {
-        assert(p->lc.child[r] == this);
-        p->lc.child[r] = c;
+        assert(p->lc.child(r) == this);
+        p->lc.child(r) = c;
     }
 }
 
 void Expr::splay() const {
     while (auto p = parent()) {
         if (auto pp = p->parent()) {
-            if (p->lc.l == this && pp->lc.l == p) {         // zig-zig
+            if (p->lc.left == this && pp->lc.left == p) {           // zig-zig
                 pp->ror();
                 p->ror();
-            } else if (p->lc.r == this && pp->lc.r == p) {  // zag-zag
+            } else if (p->lc.right == this && pp->lc.right == p) {  // zag-zag
                 pp->rol();
                 p->rol();
-            } else if (p->lc.l == this && pp->lc.r == p) {  // zig-zag
+            } else if (p->lc.left == this && pp->lc.right == p) {   // zig-zag
                 p->ror();
                 pp->rol();
-            } else {                                        // zag-zig
-                assert(p->lc.r == this && pp->lc.l == p);
+            } else {                                                // zag-zig
+                assert(p->lc.right == this && pp->lc.left == p);
                 p->rol();
                 pp->ror();
             }
-        } else if (p->lc.l == this) {                       // zig
+        } else if (p->lc.left == this) {                            // zig
             p->ror();
-        } else {                                            // zag
-            assert(p->lc.r == this);
+        } else {                                                    // zag
+            assert(p->lc.right == this);
             p->rol();
         }
     }
@@ -183,24 +195,40 @@ void Expr::splay() const {
 void Expr::link(const Expr* up) const {
     expose();
     up->expose();
-    up->lc.p = this;
-    assert(!lc.r);
-    lc.r = up;
+    up->lc.parent = this;
+    assert(!lc.right);
+    lc.right = up;
 }
 
 void Expr::cut() const {
     expose();
-    if (auto& r = lc.r) {
-        r->lc.p = nullptr;
-        r       = nullptr;
+    if (auto& r = lc.right) {
+        r->lc.parent = nullptr;
+        r            = nullptr;
     }
 }
 
 void Expr::expose() const {
-    for (const Expr* expr = this, *prev = nullptr; expr; prev = expr, expr = expr->lc.p) {
+    for (const Expr* expr = this, *prev = nullptr; expr; prev = expr, expr = expr->lc.parent) {
         expr->splay();
-        assert(!prev || prev->lc.p == expr);
-        expr->lc.l = prev;
+        assert(!prev || prev->lc.parent == expr);
+        expr->lc.left = prev;
     }
     splay();
+}
+
+const Expr* Expr::root() const {
+    expose();
+    const Expr* expr = this;
+    while (auto r = expr->lc.right) expr = r;
+    expr->splay();
+    return expr;
+}
+
+const Expr* Expr::lca(const Expr* a, const Expr* b) {
+    if (a == b) return a;
+    if (a->root() != b->root()) return nullptr;
+    a->expose();
+    b->expose();
+    return b;
 }

@@ -17,6 +17,8 @@ enum class Tag {
     Minus,              // unary
     Add, Sub, Mul, Eq,  // binary
     Select,             // ternary
+    BB,                 // mut unary
+    Jmp, Br,            // CF: binary + ternary
 };
 
 std::string tag2str(Tag);
@@ -38,6 +40,7 @@ struct GIDLt {
 
 struct Expr {
     Expr(World&, Tag tag, std::span<const Expr*> ops, uint64_t stuff = 0);
+    Expr(World&);
 
     static bool equal(const Expr*, const Expr*);
     std::ostream& dump(std::ostream&) const;
@@ -60,6 +63,7 @@ struct Expr {
 
     World& world;
     size_t gid;
+    bool mut;
     Tag tag;
     std::vector<const Expr*> ops;
     uint64_t stuff;
@@ -67,8 +71,10 @@ struct Expr {
 
     /// @name Splay Tree
     ///@{
-    const Expr* parent() const { return lc.p && (lc.p->lc.l == this || lc.p->lc.r == this) ? lc.p : nullptr; }
-    const Expr* path_parent() const { return lc.p && (lc.p->lc.l != this && lc.p->lc.r != this) ? lc.p : nullptr; }
+    const Expr* parent() const { return lc.parent && (lc.parent->lc.left == this || lc.parent->lc.right == this) ? lc.parent : nullptr; }
+    const Expr* path_parent() const { return lc.parent && (lc.parent->lc.left != this && lc.parent->lc.right != this) ? lc.parent : nullptr; }
+    const Expr* root() const;
+    static const Expr* lca(const Expr* a, const Expr* b);
     template<size_t l>
     void rot() const;
     void rol() const { return rot<0>(); }
@@ -83,19 +89,11 @@ struct Expr {
     void cut() const;               ///< Cut `this` from its parent.
     ///@}
 
-    struct LC {
-        LC() {
-            l = r = nullptr;
-        }
-
-        const Expr* p = nullptr; // parent or path-parent
-        union {
-            struct {
-                const Expr* l; // deeper/down
-                const Expr* r; // shallower/up
-            };
-            std::array<const Expr*, 2> child;
-        };
+    struct {
+        const Expr*& child(size_t i) { return i == 0 ? left : right; }
+        const Expr* parent = nullptr; ///< parent or path-parent
+        const Expr* left   = nullptr; ///< deeper/down
+        const Expr* right  = nullptr; ///< shallower/up
     } mutable lc; // intrusive Link/Cut Tree
 };
 
