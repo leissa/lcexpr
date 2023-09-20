@@ -35,7 +35,7 @@ public:
         if (auto& r = right_) r = r->parent_ = nullptr;
     }
 
-    /// Bring `this` to the root of the auxiliary splay tree.
+    /// Make `this` to root a preferred path while putting `this` to the root of the auxiliary splay tree.
     /// @returns the last valid path_parent.
     const S* expose() const {
         const S* prev = nullptr;
