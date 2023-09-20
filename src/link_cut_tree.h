@@ -7,6 +7,7 @@
 template<class T>
 class LinkCutTree {
 public:
+    using This                     = LinkCutTree<T>;
     using S                        = std::remove_const_t<T>;
     static constexpr bool is_const = std::is_const_v<T>;
 
@@ -14,9 +15,9 @@ public:
     ///@{
     const S* splay_parent() const { return parent_ && (parent_->left_ == this || parent_->right_ == this) ? parent_ : nullptr; }
     const S* path_parent() const { return parent_ && (parent_->left_ != this && parent_->right_ != this) ? parent_ : nullptr; }
-    const S*& child(size_t i) const { return i == 0 ? left_ : right_; }
     const S* left() const { return left_; }
     const S* right() const { return right_; }
+    const S*& child(size_t i) const { return i == 0 ? left_ : right_; }
     ///@}
 
     /// Link `this` tree to the @p up%per one.
@@ -65,13 +66,23 @@ public:
         return b->expose();
     }
 
-    //const S* root() const { return const_cast<LinkCutTree<S>*>(this)->root(); }
-    //const S* expose() const { return const_cast<LinkCutTree<S>*>(this)->expose(); }
-    //static const S* lca(const S* a, const S* b) { return lca(const_cast<S*>(a), const_cast<S*>(b)); }
+    /// @name non-const variants
+    ///@{
+    S* splay_parent()         requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->splay_parent()); }
+    S* path_parent()          requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->path_parent()); }
+    S* left()                 requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->left()); }
+    S* right()                requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->right()); }
+    S*& child(size_t i)       requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->child(i)); }
+    S* root()                 requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->root()); }
+    S* expose()               requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->expose()); }
+    void link(S* up)          requires (!is_const) { return const_cast<const This*>(this)->link(const_cast<const S*>(up)); }
+    static S* lca(S* a, S* b) requires (!is_const) { return const_cast<S*>(lca(const_cast<const S*>(a), const_cast<const S*>(b))); }
+    ///@}
 
 private:
-    const S* self() { return static_cast<S*>(this); }
-    const S* self() const { return const_cast<S*>(static_cast<const S*>(this)); }
+    const S* self() const { return static_cast<const S*>(this); }
+    S* self() requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->self()); }
+
     void rol() const { return rot<0>(); }
     void ror() const { return rot<1>(); }
 

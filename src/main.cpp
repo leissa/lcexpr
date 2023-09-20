@@ -4,25 +4,15 @@
 #include "link_cut_tree.h"
 
 struct Test : public LinkCutTree<Test> {
+    int i = 0;
 };
-
-struct ConstTest : LinkCutTree<const ConstTest> {
-};
-
-void foo(const ConstTest* test) {
-    test->root();
-}
 
 int main() {
     Test a, b;
     a.link(&b);
-    a.root();
-    a.cut();
-
-    ConstTest x, y;
-    x.link(&y);
-    foo(&y);
-    y.cut();
+    auto r = a.root();
+    r->i++;
+    if (auto p = a.splay_parent()) p->i++;
 
     {
         World w;
@@ -50,6 +40,9 @@ int main() {
         assert(w.lit(1)->root() == sel);
         sel->dot();
 
-        Expr::lca(w.lit(0), w.lit(1))->dump();
+        assert(Expr::lca(w.lit(0), w.lit(1)) == eq);
+        assert(Expr::lca(w.lit(0), eq) == eq);
+        assert(Expr::lca(w.lit(0), a) == sel);
+        assert(Expr::lca(w.lit(0), w.lit(23)) == nullptr);
     }
 }
