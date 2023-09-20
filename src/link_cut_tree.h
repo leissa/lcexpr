@@ -7,54 +7,64 @@
 template<class S>
 class LinkCutTree {
 public:
-    S* self() { return static_cast<S*>(this); }
-
+    /// Link `this` tree to the @p up%per one.
     void link(S* up) {
-        this->expose();
+        self()->expose();
         up->expose();
         up->parent_ = self();
-        assert(!root_);
-        root_ = up;
+        assert(!right_);
+        right_ = up;
     }
 
+    /// Cut `this` tree from its parent.
     void cut() {
         expose();
-        if (auto& r = root_) {
-            r->parent_ = nullptr;
-            r          = nullptr;
-        }
+        if (auto& r = right_) r = r->parent_ = nullptr;
     }
 
-    void expose() {
-        for (S *curr = self(), *prev = (S*)nullptr; curr; prev = curr, curr = curr->parent_) {
+    /// Bring `this` to the root of the auxiliary splay tree.
+    /// @returns the last valid path_parent.
+    S* expose() {
+        S* prev = nullptr;
+        for (auto curr = self(); curr; prev = curr, curr = curr->parent_) {
             curr->splay();
             assert(!prev || prev->parent_ == curr);
-            curr->leaf_ = prev;
+            curr->left_ = prev;
         }
         splay();
+        return prev;
     }
 
+    /// Find root.
     S* root() {
         expose();
         auto curr = self();
-        while (auto r = curr->root_) curr = r;
+        while (auto r = curr->right_) curr = r;
         curr->splay();
         return curr;
     }
 
-#if 0
-    const Expr* Expr::lca(const Expr* a, const Expr* b) {
+    /// Least Common Ancestor.
+    /// @returns `nullptr`, if @p a and @p b are in different trees.
+    static S* lca(S* a, S* b) {
         if (a == b) return a;
         if (a->root() != b->root()) return nullptr;
         a->expose();
-        b->expose();
-        return b;
+        return b->expose();
     }
-#endif
+
+    const S* root() const { return const_cast<LinkCutTree<S>*>(this)->root(); }
+    const S* expose() const { return const_cast<LinkCutTree<S>*>(this)->expose(); }
+    static const S* lca(const S* a, const S* b) { return lca(const_cast<S*>(a), const_cast<S*>(b)); }
 
 private:
-    S* parent() { return parent_ && (parent_->leaf_ == this || parent_->root_ == this) ? parent_ : nullptr; }
-    S* path_parent() { return parent_ && (parent_->leaf_ != this && parent_->root_ != this) ? parent_ : nullptr; }
+    S* self() { return static_cast<S*>(this); }
+    S* self() const { return const_cast<S*>(static_cast<const S*>(this)); }
+    S* splay_parent() const { return parent_ && (parent_->left_ == this || parent_->right_ == this) ? parent_ : nullptr; }
+    S* path_parent() const { return parent_ && (parent_->left_ != this && parent_->right_ != this) ? parent_ : nullptr; }
+    S*& child(size_t i) const { return i == 0 ? left_ : right_; }
+    void rol() const { return rot<0>(); }
+    void ror() const { return rot<1>(); }
 
     /*
      *  | Left                  | Right                     |
@@ -69,10 +79,9 @@ private:
      *  |
      */
     template<size_t l>
-    void rot() {
+    void rot() const {
         constexpr size_t r = (l + 1) % 2;
         auto p = parent_;
-        auto ppp = parent();
         auto c = child(r);
         parent_ = c;
 
@@ -84,7 +93,7 @@ private:
             c->child(l) = self();
         }
 
-        if (!ppp) {
+        if (!splay_parent()) {
             // this is new root
         } else if (p->child(l) == this) {
             p->child(l) = c;
@@ -94,37 +103,33 @@ private:
         }
     }
 
-    void rol() { return rot<0>(); }
-    void ror() { return rot<1>(); }
-
-    void splay() {
-        while (auto p = parent()) {
-            if (auto pp = p->parent()) {
-                if (p->leaf_ == this && pp->leaf_ == p) {           // zig-zig
+    void splay() const {
+        while (auto p = splay_parent()) {
+            if (auto pp = p->splay_parent()) {
+                if (p->left_ == this && pp->left_ == p) {           // zig-zig
                     pp->ror();
                     p->ror();
-                } else if (p->root_ == this && pp->root_ == p) {    // zag-zag
+                } else if (p->right_ == this && pp->right_ == p) {  // zag-zag
                     pp->rol();
                     p->rol();
-                } else if (p->leaf_ == this && pp->root_ == p) {    // zig-zag
+                } else if (p->left_ == this && pp->right_ == p) {   // zig-zag
                     p->ror();
                     pp->rol();
                 } else {                                            // zag-zig
-                    assert(p->root_ == this && pp->leaf_ == p);
+                    assert(p->right_ == this && pp->left_ == p);
                     p->rol();
                     pp->ror();
                 }
-            } else if (p->leaf_ == this) {                          // zig
+            } else if (p->left_ == this) {                          // zig
                 p->ror();
             } else {                                                // zag
-                assert(p->root_ == this);
+                assert(p->right_ == this);
                 p->rol();
             }
         }
     }
 
-    S*& child(size_t i) { return i == 0 ? leaf_ : root_; }
     mutable S* parent_ = nullptr; ///< parent or path-parent
-    mutable S* leaf_   = nullptr; ///< left/deeper/down/leaf-direction
-    mutable S* root_   = nullptr; ///< right/shallower/up/root-direction
+    mutable S* left_   = nullptr; ///< left/deeper/down/leaf-direction
+    mutable S* right_  = nullptr; ///< right/shallower/up/root-direction
 };

@@ -6,17 +6,23 @@
 struct Test : public LinkCutTree<Test> {
 };
 
-struct ConstTest : LinkCutTree<const Test> {
-};
+//struct ConstTest : LinkCutTree<const Test> {
+//};
+
+void foo(const Test* test) {
+    test->root();
+}
 
 int main() {
     Test a, b;
     a.link(&b);
-    //auto r = a.root();
+    a.root();
     a.cut();
 
-    ConstTest ctest;
-    ctest.cut();
+    Test x, y;
+    x.link(&y);
+    foo(&y);
+    y.cut();
 
     {
         World w;
