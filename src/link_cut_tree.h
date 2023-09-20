@@ -103,10 +103,10 @@ private:
                 if (p->leaf_ == this && pp->leaf_ == p) {           // zig-zig
                     pp->ror();
                     p->ror();
-                } else if (p->root_ == this && pp->root_ == p) {  // zag-zag
+                } else if (p->root_ == this && pp->root_ == p) {    // zag-zag
                     pp->rol();
                     p->rol();
-                } else if (p->leaf_ == this && pp->root_ == p) {   // zig-zag
+                } else if (p->leaf_ == this && pp->root_ == p) {    // zig-zag
                     p->ror();
                     pp->rol();
                 } else {                                            // zag-zig

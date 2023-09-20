@@ -12,11 +12,11 @@ struct ConstTest : LinkCutTree<const Test> {
 int main() {
     Test a, b;
     a.link(&b);
-    auto r = a.root();
+    //auto r = a.root();
     a.cut();
 
-    //ConstTest ctest;
-    //ctest.cut();
+    ConstTest ctest;
+    ctest.cut();
 
     {
         World w;
