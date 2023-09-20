@@ -1,8 +1,23 @@
 #include <iostream>
 
 #include "world.h"
+#include "link_cut_tree.h"
+
+struct Test : public LinkCutTree<Test> {
+};
+
+struct ConstTest : LinkCutTree<const Test> {
+};
 
 int main() {
+    Test a, b;
+    a.link(&b);
+    auto r = a.root();
+    a.cut();
+
+    //ConstTest ctest;
+    //ctest.cut();
+
     {
         World w;
         auto a = w.id('a');
