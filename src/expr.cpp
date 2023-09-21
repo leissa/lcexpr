@@ -64,8 +64,8 @@ std::string Expr::name() const {
     return tag2str(tag);
 }
 
-std::string Expr::str() const { return  "\""s  + std::to_string(gid) + ": " + name() + " - " + std::to_string(agg)+ "\""s ; }
-std::string Expr::str2() const { return "\"_"s + std::to_string(gid) + ": " + name() + " - " + std::to_string(agg)+ "\""s ; }
+std::string Expr::str() const { return  "\""s  + std::to_string(gid) + ": " + name() + " -- " + std::to_string(agg)+ "\""s ; }
+std::string Expr::str2() const { return "\"_"s + std::to_string(gid) + ": " + name() + " -- " + std::to_string(agg)+ "\""s ; }
 
 std::ostream& Expr::dump(std::ostream& o) const {
     if (tag == Tag::Lit) return o << stuff;
@@ -122,6 +122,8 @@ std::ostream& Expr::dot(std::ostream& o) const {
         if (auto r = expr->right()) o << '\t' << expr->str2() << " -> " << r->str2() << "[color=red];" << std::endl;
 
         for (auto op : expr->ops) enqueue(op);
+        if (auto l = expr->left_ ) enqueue(l);
+        if (auto r = expr->right_) enqueue(r);
     }
 
     return o << "}" << std::endl;;

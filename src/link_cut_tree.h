@@ -23,7 +23,11 @@
 /// class MyClass : public<const MyClass> { /*...*/ };
 /// ```
 ///
+/// @warning As this is an *intrusive* data structure, it's the responsibility of the user to link/cut nodes in the *rep* tree.
+/// This class **only** manages the *aux* tree.
 /// @note This data structure actually maintains a forest of *rep* and *aux* trees.
+/// @sa [Splay Tree](https://hackmd.io/@CharlieChuang/By-UlEPFS#Splay-Tree-Sleator-Tarjan-1983)
+/// @sa [Link/Cut Tree](https://hackmd.io/@CharlieChuang/By-UlEPFS#LinkCut-Tree)
 template<class T>
 class LinkCutTree {
 public:
@@ -40,7 +44,8 @@ public:
     const S*& child(size_t i) const { return i == 0 ? left_ : right_; }
     ///@}
 
-    /// Link `this` tree to the @p up%per one.
+    /// Link `this` to @p up%per in *aux* tree.
+    /// @warning It's the responsibility of the user to also link it in the *rep* tree accordingly.
     void link(const S* up) const {
         self()->expose();
         up->expose();
@@ -50,12 +55,14 @@ public:
         up->aggregate();
     }
 
-    /// Cut `this` tree from its parent.
+    /// Cut `this` from parent in *aux* tree.
+    /// @warning It's the responsibility of the user to also cut it in the *rep* tree accordingly.
     void cut() const {
         expose();
-        if (auto r = right_) {
-            right_ = right_->parent_ = nullptr;
-            r->aggregate();
+        if (right_) {
+            right_->aggregate();
+            right_->parent_ = nullptr;
+            right_          = nullptr;
         }
     }
 
@@ -84,30 +91,34 @@ public:
 
     /// Least Common Ancestor.
     /// @returns `nullptr`, if @p a and @p b are in different trees.
-    static const S* lca(const S* a, const S* b) {
-        if (a == b) return a;
-        if (a->root() != b->root()) return nullptr;
-        a->expose();
-        return b->expose();
+    const S* lca(const S* other) const {
+        if (self() == other) return other;
+        if (self()->root() != other->root()) return nullptr;
+        self()->expose();
+        return other->expose();
     }
 
     /// Aggregate dummy implementations; "override" in @p S (no `virtual` override required due to CRTP).
     void aggregate() const {}
+    //void aggregate_sub(const S*) const {}
+    //void aggregate_add(const S*) const {}
 
+    // clang-format off
     /// @name Non-Const Variants
     ///@{
-    S* splay_parent()         requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->splay_parent()); }
-    S* path_parent()          requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->path_parent()); }
-    S* left()                 requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->left()); }
-    S* right()                requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->right()); }
-    S*& child(size_t i)       requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->child(i)); }
-    S* root()                 requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->root()); }
-    S* expose()               requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->expose()); }
-    void link(S* up)          requires (!is_const) { return const_cast<const This*>(this)->link(const_cast<const S*>(up)); }
-    static S* lca(S* a, S* b) requires (!is_const) { return const_cast<S*>(lca(const_cast<const S*>(a), const_cast<const S*>(b))); }
+    S* splay_parent()   requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->splay_parent()); }
+    S* path_parent()    requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->path_parent()); }
+    S* left()           requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->left()); }
+    S* right()          requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->right()); }
+    S*& child(size_t i) requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->child(i)); }
+    S* root()           requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->root()); }
+    S* expose()         requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->expose()); }
+    void link(S* up)    requires (!is_const) { return const_cast<const This*>(this)->link(const_cast<const S*>(up)); }
+    S* lca(S* other)    requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->lca(const_cast<const S*>(other))); }
     ///@}
+    // clang-format on
 
-protected:
+//protected:
     const S* self() const { return static_cast<const S*>(this); }
     S* self() requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->self()); }
 
@@ -153,10 +164,11 @@ protected:
         c->parent_  = p;
         c->child(l) = x;
 
-        x->aggregate();
-        c->aggregate();
+        //x->aggregate();
+        //c->aggregate();
     }
 
+    /// [Splays](https://hackmd.io/@CharlieChuang/By-UlEPFS#Operation1) `this` to the root of its splay tree.
     void splay() const {
         while (auto p = splay_parent()) {
             if (auto pp = p->splay_parent()) {
