@@ -30,6 +30,7 @@ Expr::Expr(World& world, Tag tag, std::span<const Expr*> ops, uint64_t stuff)
     , ops(ops.begin(), ops.end())
     , stuff(stuff)
     , hash(size_t(tag)) {
+    agg = gid;
     hash ^= stuff << 1;
     for (auto op : ops) {
         hash ^= op->gid << 1;
@@ -44,7 +45,9 @@ Expr::Expr(World& world)
     , tag(Tag::BB)
     , ops(1, nullptr)
     , stuff(0)
-    , hash(gid) {}
+    , hash(gid) {
+    agg = gid;
+}
 
 bool Expr::equal(const Expr* e1, const Expr* e2) {
     if (e1->mut || e2->mut) return e1 == e2;
@@ -67,7 +70,7 @@ std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
 
 void Expr::dot() const {
     static int i = 0;
-    dot("out" + std::to_string(i++) + ".dot");
+    dot("expr" + std::to_string(i++) + ".dot");
 }
 
 void Expr::dot(std::string name) const {
@@ -92,12 +95,7 @@ std::ostream& Expr::dot(std::ostream& o) const {
         q.pop();
 
         for (auto op : expr->ops) {
-            //if (expr->lc.left == op)
-                //o << '\t' << expr->str() << " -> " << op->str() << "[color=green];" << std::endl;
-            //else if (op->lc.rightight == expr)
-                //o << '\t' << expr->str() << " -> " << op->str() << "[color=red];" << std::endl;
-            //else
-                o << '\t' << expr->str() << " -> " << op->str() << "[color=black];" << std::endl;
+            o << '\t' << expr->str() << " -> " << op->str() << "[color=black];" << std::endl;
             enqueue(op);
         }
     }

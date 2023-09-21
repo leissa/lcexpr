@@ -27,12 +27,16 @@ public:
         up->parent_ = self();
         assert(!right_);
         right_ = up;
+        self()->aggregate_link(up);
     }
 
     /// Cut `this` tree from its parent.
     void cut() const {
         expose();
-        if (auto& r = right_) r = r->parent_ = nullptr;
+        if (right_) {
+            self()->update_cut(right_);
+            right_ = right_->parent_ = nullptr;
+        }
     }
 
     /// Make `this` to root a preferred path while putting `this` to the root of the auxiliary splay tree.
@@ -66,7 +70,13 @@ public:
         return b->expose();
     }
 
-    /// @name non-const variants
+    /// @name Aggregate Dummy Implementations
+    ///@{
+    void aggregate_link(const S*) const {}
+    void aggregate_cut(const S*) const {}
+    ///@}
+
+    /// @name Non-Const Variants
     ///@{
     S* splay_parent()         requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->splay_parent()); }
     S* path_parent()          requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->path_parent()); }
@@ -91,9 +101,9 @@ private:
      *  ----------------------------------------------------|
      *  |   p              p    |       p            p      |
      *  |   |              |    |       |            |      |
-     *  |  this            c    |      this          c      |
+     *  |   x              c    |       x            c      |
      *  |  / \     ->     / \   |      / \    ->    / \     |
-     *  | a   c         this d  |     c   a        d  this  |
+     *  | a   c          x   d  |     c   a        d   x    |
      *  |    / \        / \     |    / \              / \   |
      *  |   b   d      a   b    |   d   b            b   a  |
      *  |
@@ -101,27 +111,25 @@ private:
     template<size_t l>
     void rot() const {
         constexpr size_t r = (l + 1) % 2;
-        auto p  = parent_;
-        auto sp = splay_parent();
-        auto c  = child(r);
-        parent_ = c;
 
-        if (c) {
-            auto b = c->child(l);
-            child(r) = b;
-            if (b) b->parent_ = self();
-            c->parent_ = p;
-            c->child(l) = self();
+        auto x = self();
+        auto p = x->parent_;
+        auto c = x->child(r);
+        auto b = c->child(l);
+
+        if (b) b->parent_ = x;
+
+        if (p) {
+            if (p->child(l) == x)
+                p->child(l) = c;
+            else if (p->child(r) == x)
+                p->child(r) = c;
         }
 
-        if (!sp) {
-            // this is new root
-        } else if (p->child(l) == this) {
-            p->child(l) = c;
-        } else {
-            assert(p->child(r) == this);
-            p->child(r) = c;
-        }
+        x->parent_  = c;
+        x->child(r) = b;
+        c->parent_  = p;
+        c->child(l) = x;
     }
 
     void splay() const {

@@ -63,6 +63,10 @@ struct Expr : public LinkCutTree<const Expr> {
     std::string str() const { return std::string("\"") + std::to_string(gid) + ": " + name() + std::string("\""); }
     std::string str2() const { return std::string("\"_") + std::to_string(gid) + ": " + name() + std::string("\""); }
 
+    void aggregate_link(const Expr*) const {
+        //up->agg += this->gg;
+    }
+
     World& world;
     size_t gid;
     bool mut;
@@ -70,6 +74,7 @@ struct Expr : public LinkCutTree<const Expr> {
     std::vector<const Expr*> ops;
     uint64_t stuff;
     size_t hash;
+    mutable size_t agg = 0;
 };
 
 using ExprSet = std::unordered_set<const Expr*, GIDHash<const Expr*>, GIDEq<const Expr*>>;
