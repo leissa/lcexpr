@@ -4,6 +4,26 @@
 
 /// [Link/Cut Tree](https://en.wikipedia.org/wiki/Link/cut_tree) that uses
 /// [CRTP](https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern) to make it intrusive.
+/// We use the following terminology:
+/// * **rep** tree is the *represented* tree that we actually care about.
+/// * **aux** tree is the *auxiliary* tree that is used to index paths in the *rep* tree;
+///     an *aux* tree is implemented as [splay tree](https://en.wikipedia.org/wiki/Splay_tree).
+/// * the **l**%eft child of a node in the *aux* tree points to the **l**%eafs of the *rep* tree,
+/// * the **r**%ight child of a node in the *aux* tree points to the **r**%oot of the *rep* tree.
+///
+/// To make a LinkCutTree, simply derive from this class using one of two variants:
+/// 1. With this variant, all methods from LinkCutTree are available as non-`const` methods,
+/// as all methods may change some pointers in the internal data structure.
+/// ```
+/// class MyClass : public<MyClass> { /*...*/ };
+/// ```
+/// 2. Alternatively, you can argue that internal pointers of the LinkCutTree tree are an implementation detail.
+/// With this variant, all inherited methods are also available as `const` methods.
+/// ```
+/// class MyClass : public<const MyClass> { /*...*/ };
+/// ```
+///
+/// @note This data structure actually maintains a forest of *rep* and *aux* trees.
 template<class T>
 class LinkCutTree {
 public:
@@ -39,8 +59,8 @@ public:
         }
     }
 
-    /// Make `this` to root a preferred path while putting `this` to the root of the auxiliary splay tree.
-    /// @returns the last valid path_parent.
+    /// Make a preferred path from `this` to root while putting `this` at the root of the *aux* tree.
+    /// @returns the last valid LinkCutTree::path_parent.
     const S* expose() const {
         const S* prev = nullptr;
         for (auto curr = self(); curr; prev = curr, curr = curr->parent_) {
@@ -53,7 +73,7 @@ public:
         return prev;
     }
 
-    /// Find root.
+    /// Find root of `this` in *rep* tree.
     const S* root() const {
         expose();
         auto curr = self();
@@ -87,24 +107,25 @@ public:
     static S* lca(S* a, S* b) requires (!is_const) { return const_cast<S*>(lca(const_cast<const S*>(a), const_cast<const S*>(b))); }
     ///@}
 
-private:
+protected:
     const S* self() const { return static_cast<const S*>(this); }
     S* self() requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->self()); }
 
     void rol() const { return rot<0>(); }
     void ror() const { return rot<1>(); }
 
-    /*
-     *  | Left                  | Right                     |
-     *  ----------------------------------------------------|
-     *  |   p              p    |       p            p      |
-     *  |   |              |    |       |            |      |
-     *  |   x              c    |       x            c      |
-     *  |  / \     ->     / \   |      / \    ->    / \     |
-     *  | a   c          x   d  |     c   a        d   x    |
-     *  |    / \        / \     |    / \              / \   |
-     *  |   b   d      a   b    |   d   b            b   a  |
-     *  |
+    /**
+     * ```
+     *  | Left                  | Right                  |
+     *  |-----------------------|------------------------|
+     *  |   p              p    |       p          p     |
+     *  |   |              |    |       |          |     |
+     *  |   x              c    |       x          c     |
+     *  |  / \     ->     / \   |      / \   ->   / \    |
+     *  | a   c          x   d  |     c   a      d   x   |
+     *  |    / \        / \     |    / \            / \  |
+     *  |   b   d      a   b    |   d   b          b   a |
+     *  ```
      */
     template<size_t l>
     void rot() const {
@@ -118,10 +139,13 @@ private:
         if (b) b->parent_ = x;
 
         if (p) {
-            if (p->child(l) == x)
+            if (p->child(l) == x) {
                 p->child(l) = c;
-            else if (p->child(r) == x)
+            } else if (p->child(r) == x) {
                 p->child(r) = c;
+            } else {
+                /* only path parent */;
+            }
         }
 
         x->parent_  = c;

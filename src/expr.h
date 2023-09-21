@@ -59,7 +59,7 @@ struct Expr : public LinkCutTree<const Expr> {
     std::string str() const;
     std::string str2() const;
 
-    void aggregate() const { agg = (left() ? left()->agg : 0) + (right() ? right()->agg : 0); }
+    void aggregate() const { agg = gid + (left() ? left()->agg : 0) + (right() ? right()->agg : 0); }
 
     World& world;
     size_t gid;

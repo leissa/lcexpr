@@ -39,6 +39,8 @@ int main() {
         assert(eq->root() == sel);
         assert(w.lit(1)->root() == sel);
         sel->dot();
+        sel->expose();
+        sel->dot();
 
         assert(Expr::lca(w.lit(0), w.lit(1)) == eq);
         assert(Expr::lca(w.lit(0), eq) == eq);
