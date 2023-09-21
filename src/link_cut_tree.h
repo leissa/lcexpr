@@ -27,15 +27,15 @@ public:
         up->parent_ = self();
         assert(!right_);
         right_ = up;
-        self()->aggregate_link(up);
+        up->aggregate();
     }
 
     /// Cut `this` tree from its parent.
     void cut() const {
         expose();
-        if (right_) {
-            self()->update_cut(right_);
+        if (auto r = right_) {
             right_ = right_->parent_ = nullptr;
+            r->aggregate();
         }
     }
 
@@ -47,6 +47,7 @@ public:
             curr->splay();
             assert(!prev || prev->parent_ == curr);
             curr->left_ = prev;
+            curr->aggregate();
         }
         splay();
         return prev;
@@ -70,11 +71,8 @@ public:
         return b->expose();
     }
 
-    /// @name Aggregate Dummy Implementations
-    ///@{
-    void aggregate_link(const S*) const {}
-    void aggregate_cut(const S*) const {}
-    ///@}
+    /// Aggregate dummy implementations; "override" in @p S (no `virtual` override required due to CRTP).
+    void aggregate() const {}
 
     /// @name Non-Const Variants
     ///@{
@@ -130,6 +128,9 @@ private:
         x->child(r) = b;
         c->parent_  = p;
         c->child(l) = x;
+
+        x->aggregate();
+        c->aggregate();
     }
 
     void splay() const {

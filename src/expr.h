@@ -55,17 +55,11 @@ struct Expr : public LinkCutTree<const Expr> {
     std::ostream& dot(std::ostream&) const;
     ///@}
 
-    std::string name() const {
-        if (tag == Tag::Lit) return std::to_string(stuff);
-        if (tag == Tag::Id) return std::string(1, (char)stuff);
-        return tag2str(tag);
-    }
-    std::string str() const { return std::string("\"") + std::to_string(gid) + ": " + name() + std::string("\""); }
-    std::string str2() const { return std::string("\"_") + std::to_string(gid) + ": " + name() + std::string("\""); }
+    std::string name() const;
+    std::string str() const;
+    std::string str2() const;
 
-    void aggregate_link(const Expr*) const {
-        //up->agg += this->gg;
-    }
+    void aggregate() const { agg = (left() ? left()->agg : 0) + (right() ? right()->agg : 0); }
 
     World& world;
     size_t gid;

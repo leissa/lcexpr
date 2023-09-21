@@ -58,6 +58,15 @@ bool Expr::equal(const Expr* e1, const Expr* e2) {
     return res;
 }
 
+std::string Expr::name() const {
+    if (tag == Tag::Lit) return std::to_string(stuff);
+    if (tag == Tag::Id) return std::string(1, (char)stuff);
+    return tag2str(tag);
+}
+
+std::string Expr::str() const { return  "\""s  + std::to_string(gid) + ": " + name() + " - " + std::to_string(agg)+ "\""s ; }
+std::string Expr::str2() const { return "\"_"s + std::to_string(gid) + ": " + name() + " - " + std::to_string(agg)+ "\""s ; }
+
 std::ostream& Expr::dump(std::ostream& o) const {
     if (tag == Tag::Lit) return o << stuff;
     if (tag == Tag::Id) return o << (char)stuff;
@@ -70,7 +79,7 @@ std::ostream& Expr::dump() const { return dump(std::cout) << std::endl; }
 
 void Expr::dot() const {
     static int i = 0;
-    dot("expr" + std::to_string(i++) + ".dot");
+    dot("out" + std::to_string(i++) + ".dot");
 }
 
 void Expr::dot(std::string name) const {
