@@ -118,7 +118,7 @@ public:
     ///@}
     // clang-format on
 
-//protected:
+protected:
     const S* self() const { return static_cast<const S*>(this); }
     S* self() requires (!is_const) { return const_cast<S*>(const_cast<const This*>(this)->self()); }
 
