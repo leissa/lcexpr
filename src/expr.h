@@ -19,8 +19,8 @@ enum class Tag {
     Minus,              // unary
     Add, Sub, Mul, Eq,  // binary
     Select,             // ternary
-    BB,                 // mut unary
     Jmp, Br,            // CF: binary + ternary
+    BB,                 // mut unary
 };
 
 std::string tag2str(Tag);
@@ -44,6 +44,13 @@ struct Expr : public LinkCutTree<const Expr> {
     Expr(World&, Tag tag, std::span<const Expr*> ops, uint64_t stuff = 0);
     Expr(World&);
 
+    void set(const Expr* e) {
+        assert(ops.size() == 1);
+        assert(ops[0] == nullptr);
+        ops[0] = e;
+        e->link(this);
+    }
+
     static bool equal(const Expr*, const Expr*);
     std::ostream& dump(std::ostream&) const;
     std::ostream& dump() const;
@@ -56,15 +63,24 @@ struct Expr : public LinkCutTree<const Expr> {
     ///@}
 
     std::string name() const;
-    std::string str() const;
-    std::string str2() const;
+    std::string str_(bool prefix) const;
+    std::string str_rep() const { return str_(false); }
+    std::string str_aux() const { return str_(true); }
 
     void aggregate_link(const Expr* up) const { up->agg += this->agg; }
     void aggregate_cut(const Expr* up) const { up->agg -= this->agg; }
     void aggregate() const {
+#if 0
         agg = gid;
         for (auto op : ops) agg += op->agg;
+#endif
     }
+
+    void splay_link(const Expr* p) const {
+        p->left_ = this;
+        this->parent_ = p;
+    }
+    using LinkCutTree<const Expr>::splay;
 
     World& world;
     size_t gid;

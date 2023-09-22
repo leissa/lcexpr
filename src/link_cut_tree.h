@@ -47,11 +47,10 @@ public:
     /// Link `this` to @p up%per in *aux* tree.
     /// @warning It's the responsibility of the user to also link it in the *rep* tree accordingly.
     void link(const S* up) const {
-        self()->expose();
         up->expose();
-        up->parent_ = self();
-        assert(!right_);
-        right_ = up;
+        self()->expose();
+        up->parent_     = self();
+        self()->right_  = up;
         up->aggregate();
     }
 
@@ -89,7 +88,7 @@ public:
         return curr;
     }
 
-    /// Least Common Ancestor.
+    /// Least Common Ancestor of `this` and @p other in the *rep* tree.
     /// @returns `nullptr`, if @p a and @p b are in different trees.
     const S* lca(const S* other) const {
         if (self() == other) return other;
@@ -145,6 +144,7 @@ protected:
         auto x = self();
         auto p = x->parent_;
         auto c = x->child(r);
+        //auto b = c ? c->child(l) : nullptr;
         auto b = c->child(l);
 
         if (b) b->parent_ = x;
@@ -161,8 +161,11 @@ protected:
 
         x->parent_  = c;
         x->child(r) = b;
-        c->parent_  = p;
-        c->child(l) = x;
+
+        //if (c) {
+            c->parent_  = p;
+            c->child(l) = x;
+        //}
 
         //x->aggregate();
         //c->aggregate();

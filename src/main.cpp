@@ -16,6 +16,17 @@ int main() {
 
     {
         World w;
+        auto x = w.id('x');
+        auto p = w.add(x, x);
+        p->dot();
+        p->expose();
+        p->dot();
+        x->expose();
+        p->dot();
+    }
+
+    {
+        World w;
         auto a = w.id('a');
         auto b = w.id('b');
         auto eq = w.eq(w.lit(0), w.lit(1));
@@ -54,7 +65,6 @@ int main() {
         z->link(ab);
         sel->dot();
     }
-#if 0
     {
         World w;
         w.lit(0);
@@ -69,20 +79,15 @@ int main() {
         auto _9 = w.id('9');
         auto _0 = w.id('0');
 
-        auto link = [&](const Expr* c, const Expr* p) {
-            p->left_ = c;
-            c->parent_ = p;
-        };
-
-        link(_9, _0);
-        link(_8, _9);
-        link(_7, _8);
-        link(_6, _7);
-        link(_5, _6);
-        link(_4, _5);
-        link(_3, _4);
-        link(_2, _3);
-        link(_1, _2);
+        _9->splay_link(_0);
+        _8->splay_link(_9);
+        _7->splay_link(_8);
+        _6->splay_link(_7);
+        _5->splay_link(_6);
+        _4->splay_link(_5);
+        _3->splay_link(_4);
+        _2->splay_link(_3);
+        _1->splay_link(_2);
 
         _0->dot();
         _1->splay();
@@ -90,5 +95,19 @@ int main() {
         _2->splay();
         _2->dot();
     }
-#endif
+    {
+        World w;
+        auto start = w.bb();
+        auto cons  = w.bb();
+        auto alt   = w.bb();
+        auto next  = w.bb();
+        auto c = w.id('c'); // cond
+        auto r = w.id('r'); // ret
+        auto p = w.id('p'); // phi
+        start->set(w.br(c, cons, alt));
+        cons ->set(w.jmp(next, w.lit(23)));
+        alt  ->set(w.jmp(next, w.lit(42)));
+        next ->set(w.jmp(r, p));
+        start->dot();
+    }
 }

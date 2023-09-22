@@ -1,7 +1,9 @@
 #include "expr.h"
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <format>
 #include <queue>
 
 #include "world.h"
@@ -18,6 +20,9 @@ std::string tag2str(Tag tag) {
         case Tag::Mul:    return "*";
         case Tag::Eq:     return "==";
         case Tag::Select: return "?:";
+        case Tag::Jmp:    return "jmp";
+        case Tag::Br:     return "br";
+        case Tag::BB:     return "BB";
         default:          return "<unknonw>";
     }
 }
@@ -47,6 +52,7 @@ Expr::Expr(World& world)
     , stuff(0)
     , hash(gid) {
     agg = gid;
+    std::ranges::fill(ops, nullptr);
 }
 
 bool Expr::equal(const Expr* e1, const Expr* e2) {
@@ -64,8 +70,7 @@ std::string Expr::name() const {
     return tag2str(tag);
 }
 
-std::string Expr::str() const { return  "\""s  + std::to_string(gid) + ": " + name() + " -- " + std::to_string(agg)+ "\""s ; }
-std::string Expr::str2() const { return "\"_"s + std::to_string(gid) + ": " + name() + " -- " + std::to_string(agg)+ "\""s ; }
+std::string Expr::str_(bool prefix) const { return std::format("\"{} {}: {} ({})\"", prefix ? "_" : "", gid, name(), agg); }
 
 std::ostream& Expr::dump(std::ostream& o) const {
     if (tag == Tag::Lit) return o << stuff;
@@ -104,7 +109,7 @@ std::ostream& Expr::dot(std::ostream& o) const {
         q.pop();
 
         for (auto op : expr->ops) {
-            o << '\t' << expr->str() << " -> " << op->str() << "[color=black];" << std::endl;
+            o << std::format("\t{} -> {}[color=black];\n", expr->str_rep(), op->str_rep());
             enqueue(op);
         }
     }
@@ -115,11 +120,12 @@ std::ostream& Expr::dot(std::ostream& o) const {
     while (!q.empty()) {
         auto expr = q.front();
         q.pop();
+        auto aux = expr->str_aux();
 
-        if (auto p = expr->splay_parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed];" << std::endl;
-        if (auto p = expr->path_parent()) o << '\t' << expr->str2() << " -> " << p->str2() << "[style=dashed,color=gray];" << std::endl;
-        if (auto l = expr->left()) o << '\t' << expr->str2() << " -> " << l->str2() << "[color=green];" << std::endl;
-        if (auto r = expr->right()) o << '\t' << expr->str2() << " -> " << r->str2() << "[color=red];" << std::endl;
+        if (auto p = expr->splay_parent()) o << std::format("\t{} -> {}[style=dashed];\n",            aux, p->str_aux());
+        if (auto p = expr->path_parent())  o << std::format("\t{} -> {}[style=dashed,color=gray];\n", aux, p->str_aux());
+        if (auto l = expr->left())         o << std::format("\t{} -> {}[color=green];\n",             aux, l->str_aux());
+        if (auto r = expr->right())        o << std::format("\t{} -> {}[color=red];\n",               aux, r->str_aux());
 
         for (auto op : expr->ops) enqueue(op);
         if (auto l = expr->left_ ) enqueue(l);

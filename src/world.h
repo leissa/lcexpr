@@ -67,6 +67,13 @@ struct World {
         return put(new Expr(*this, Tag::Br, ops));
     }
 
+    Expr* bb() {
+        auto bb = new Expr(*this);
+        auto [_, ins] = set.emplace(bb);
+        assert(ins);
+        return bb;
+    }
+
     const Expr* put(const Expr* expr) {
         auto [i, ins] = set.emplace(expr);
         if (ins) return expr;
