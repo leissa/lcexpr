@@ -150,5 +150,16 @@ int main() {
         body ->set(w.jmp(head, w.add(i, w.lit(1))));
         exit ->set(w.jmp(r, i));
         start->dot();
+        body->expose();
+        start->dot();
+    }
+    {
+        World w;
+        auto a = w.bb();
+        auto b = w.bb();
+        a->set(b);
+        a->dot();
+        b->set(a);
+        a->dot();
     }
 }
