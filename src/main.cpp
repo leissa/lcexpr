@@ -7,7 +7,8 @@ struct Test : public LinkCutTree<Test> {
     int i = 0;
 };
 
-void test_splay(bool) { // TODO flip
+template<bool flip>
+void test_splay() {
     World w;
     w.lit(0);
     auto _1 = w.id('1');
@@ -21,15 +22,15 @@ void test_splay(bool) { // TODO flip
     auto _9 = w.id('9');
     auto _0 = w.id('0');
 
-    _9->splay_link(_0);
-    _8->splay_link(_9);
-    _7->splay_link(_8);
-    _6->splay_link(_7);
-    _5->splay_link(_6);
-    _4->splay_link(_5);
-    _3->splay_link(_4);
-    _2->splay_link(_3);
-    _1->splay_link(_2);
+    _9->splay_link<flip>(_0);
+    _8->splay_link<flip>(_9);
+    _7->splay_link<flip>(_8);
+    _6->splay_link<flip>(_7);
+    _5->splay_link<flip>(_6);
+    _4->splay_link<flip>(_5);
+    _3->splay_link<flip>(_4);
+    _2->splay_link<flip>(_3);
+    _1->splay_link<flip>(_2);
 
     _0->dot();
     _1->splay();
@@ -39,7 +40,8 @@ void test_splay(bool) { // TODO flip
 }
 
 int main() {
-    test_splay(false);
+    test_splay<false>();
+    test_splay<true>();
 
     Test a, b;
     b.link(&a);

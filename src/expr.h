@@ -76,10 +76,12 @@ struct Expr : public LinkCutTree<const Expr> {
 #endif
     }
 
+    template<bool flip = false>
     void splay_link(const Expr* p) const {
-        p->left_ = this;
-        this->parent_ = p;
+        *(flip ? &p->right_ : &p->left_) = this;
+        this->parent_                    = p;
     }
+
     using LinkCutTree<const Expr>::splay;
 
     World& world;

@@ -56,7 +56,7 @@ public:
         self()->aggregate();
     }
 
-    /// Cut `this` from parent in *aux* tree.
+    /// Deregisters the edge `this -> parent` in the *aux* tree.
     /// @warning It's the responsibility of the user to also cut it in the *rep* tree accordingly.
     void cut() const {
         expose();
