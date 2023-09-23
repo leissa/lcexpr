@@ -48,7 +48,7 @@ struct Expr : public LinkCutTree<const Expr> {
         assert(ops.size() == 1);
         assert(ops[0] == nullptr);
         ops[0] = e;
-        e->link(this);
+        link(e);
     }
 
     static bool equal(const Expr*, const Expr*);

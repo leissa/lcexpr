@@ -44,16 +44,16 @@ public:
     const S*& child(size_t i) const { return i == 0 ? left_ : right_; }
     ///@}
 
-    /// Link `this` to @p up%per in *aux* tree.
-    /// @warning It's the responsibility of the user to also link it in the *rep* tree accordingly.
-    void link(const S* up) const {
-        up->expose();
+    /// Registers the edge `this -> child` in the *aux* tree.
+    /// @warning It's the responsibility of the user to link it in the *rep* tree accordingly.
+    void link(const S* child) const {
         self()->expose();
-        if (!self()->right_) {
-            up->parent_     = self();
-            self()->right_  = up;
+        child->expose();
+        if (!child->right_) {
+            self()->parent_ = child;
+            child->right_   = self();
         }
-        up->aggregate();
+        self()->aggregate();
     }
 
     /// Cut `this` from parent in *aux* tree.

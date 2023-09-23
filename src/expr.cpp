@@ -40,7 +40,7 @@ Expr::Expr(World& world, Tag tag, std::span<const Expr*> ops, uint64_t stuff)
     hash ^= stuff << 1;
     for (auto op : ops) {
         hash ^= op->gid << 1;
-        op->link(this);
+        this->link(op);
     }
 }
 
