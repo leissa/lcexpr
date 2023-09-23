@@ -16,7 +16,7 @@ struct World;
 
 enum class Tag {
     Lit, Id,            // 0-ary
-    Minus,              // unary
+    Minus, Plus,        // unary
     Add, Sub, Mul, Eq,  // binary
     Select,             // ternary
     Jmp, Br,            // CF: binary + ternary

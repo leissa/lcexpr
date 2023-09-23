@@ -49,8 +49,10 @@ public:
     void link(const S* up) const {
         up->expose();
         self()->expose();
-        up->parent_     = self();
-        self()->right_  = up;
+        if (!self()->right_) {
+            up->parent_     = self();
+            self()->right_  = up;
+        }
         up->aggregate();
     }
 

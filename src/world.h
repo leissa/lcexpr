@@ -24,6 +24,11 @@ struct World {
     const Expr* lit(uint64_t u) { return put(new Expr(*this, Tag::Lit, {}, u)); }
     const Expr* id(char c) { return put(new Expr(*this, Tag::Id, {}, uint64_t(c))); }
 
+    const Expr* plus(const Expr* a) {
+        auto ops = std::array<const Expr*, 1>{a};
+        return put(new Expr(*this, Tag::Plus, ops));
+    }
+
     const Expr* minus(const Expr* a) {
         auto ops = std::array<const Expr*, 1>{a};
         return put(new Expr(*this, Tag::Minus, ops));

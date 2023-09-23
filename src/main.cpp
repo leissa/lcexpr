@@ -97,17 +97,58 @@ int main() {
     }
     {
         World w;
+        auto x = w.id('x');
+        auto y = w.id('y');
+        auto p = w.bb();
+        auto m = w.bb();
+        auto a = w.add(p, m);
+        p->set(x);
+        m->set(y);
+        a->dot();
+        x->expose();
+        a->dot();
+    }
+    {   // if diamond
+        World w;
+        auto x = w.id('x');
+        auto p = w.bb();
+        auto m = w.bb();
+        auto a = w.add(p, m);
+        p->set(x);
+        m->set(x);
+        a->dot();
+        x->expose();
+        a->dot();
+
+    }
+    {   // if diamond
+        World w;
         auto start = w.bb();
         auto cons  = w.bb();
         auto alt   = w.bb();
         auto next  = w.bb();
         auto c = w.id('c'); // cond
-        auto r = w.id('r'); // ret
         auto p = w.id('p'); // phi
+        auto r = w.id('r'); // ret
         start->set(w.br(c, cons, alt));
         cons ->set(w.jmp(next, w.lit(23)));
         alt  ->set(w.jmp(next, w.lit(42)));
         next ->set(w.jmp(r, p));
+        start->dot();
+    }
+    {   // loop
+        World w;
+        auto start = w.bb();
+        auto head  = w.bb();
+        auto body  = w.bb();
+        auto exit  = w.bb();
+        auto a = w.id('a'); // begin
+        auto i = w.id('i'); // phi/i
+        auto r = w.id('r'); // ret
+        start->set(w.jmp(a, head));
+        head ->set(w.br(w.eq(i, w.lit(42)), exit, body));
+        body ->set(w.jmp(head, w.add(i, w.lit(1))));
+        exit ->set(w.jmp(r, i));
         start->dot();
     }
 }

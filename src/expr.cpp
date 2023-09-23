@@ -14,7 +14,8 @@ std::string tag2str(Tag tag) {
     switch (tag) {
         case Tag::Id:     return "<id>";
         case Tag::Lit:    return "<lit>";
-        case Tag::Minus:  return "-";
+        case Tag::Minus:  return "u-";
+        case Tag::Plus:   return "u+";
         case Tag::Add:    return "+";
         case Tag::Sub:    return "-";
         case Tag::Mul:    return "*";
@@ -70,7 +71,8 @@ std::string Expr::name() const {
     return tag2str(tag);
 }
 
-std::string Expr::str_(bool prefix) const { return std::format("\"{} {}: {} ({})\"", prefix ? "_" : "", gid, name(), agg); }
+//std::string Expr::str_(bool prefix) const { return std::format("\"{} {}: {} ({})\"", prefix ? "_" : "", gid, name(), agg); }
+std::string Expr::str_(bool prefix) const { return std::format("\"{} {}: {}\"", prefix ? "_" : "", gid, name()); }
 
 std::ostream& Expr::dump(std::ostream& o) const {
     if (tag == Tag::Lit) return o << stuff;
@@ -109,8 +111,10 @@ std::ostream& Expr::dot(std::ostream& o) const {
         q.pop();
 
         for (auto op : expr->ops) {
-            o << std::format("\t{} -> {}[color=black];\n", expr->str_rep(), op->str_rep());
-            enqueue(op);
+            if (op) {
+                o << std::format("\t{} -> {}[color=black];\n", expr->str_rep(), op->str_rep());
+                enqueue(op);
+            }
         }
     }
 
@@ -127,7 +131,8 @@ std::ostream& Expr::dot(std::ostream& o) const {
         if (auto l = expr->left())         o << std::format("\t{} -> {}[color=green];\n",             aux, l->str_aux());
         if (auto r = expr->right())        o << std::format("\t{} -> {}[color=red];\n",               aux, r->str_aux());
 
-        for (auto op : expr->ops) enqueue(op);
+        for (auto op : expr->ops)
+            if (op) enqueue(op);
         if (auto l = expr->left_ ) enqueue(l);
         if (auto r = expr->right_) enqueue(r);
     }
